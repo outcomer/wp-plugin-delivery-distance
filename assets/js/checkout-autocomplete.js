@@ -56,27 +56,24 @@ jQuery(document).ready(function($) {
             // Fill address fields
             fillAddressFields(place, fieldSet);
             
-            // Validate and calculate delivery cost
-            validateAddress(place.formatted_address, place.place_id);
-        });
-        
-        // Handle manual input
-        let timeout;
-        $(inputElement).on('input', function() {
-            clearTimeout(timeout);
-            const value = $(this).val();
-            
-            if (value.length >= 3) {
-                timeout = setTimeout(() => {
-                    validateAddress(value);
-                }, 1000);
+            // Validate and calculate delivery cost using coordinates
+            if (place.geometry && place.geometry.location) {
+                validateAddressWithCoordinates(
+                    place.formatted_address, 
+                    place.geometry.location.lat(), 
+                    place.geometry.location.lng()
+                );
             }
         });
+        
+        // Handle manual input - disable for now as we need coordinates
+        // Manual input would require geocoding on backend
     }
     
     function fillAddressFields(place, fieldSet) {
         const components = place.address_components || [];
         let streetNumber = '';
+        let premise = '';
         let route = '';
         let city = '';
         let postalCode = '';
@@ -87,10 +84,13 @@ jQuery(document).ready(function($) {
             if (types.includes('street_number')) {
                 streetNumber = component.long_name;
             }
+            if (types.includes('premise')) {
+                premise = component.long_name;
+            }
             if (types.includes('route')) {
                 route = component.long_name;
             }
-            if (types.includes('locality') || types.includes('administrative_area_level_1')) {
+            if (types.includes('locality') || types.includes('sublocality') || types.includes('administrative_area_level_1')) {
                 city = component.long_name;
             }
             if (types.includes('postal_code')) {
@@ -98,8 +98,18 @@ jQuery(document).ready(function($) {
             }
         });
         
-        // Fill address field
-        const fullAddress = [streetNumber, route].filter(Boolean).join(' ');
+        // Build address: "U Radosti 225/1"
+        let addressParts = [];
+        if (route) addressParts.push(route);
+        if (premise && streetNumber) {
+            addressParts.push(premise + '/' + streetNumber);
+        } else if (premise) {
+            addressParts.push(premise);
+        } else if (streetNumber) {
+            addressParts.push(streetNumber);
+        }
+        
+        const fullAddress = addressParts.join(' ');
         if (fullAddress) {
             $(fieldSet.input).val(fullAddress);
         }
@@ -115,21 +125,19 @@ jQuery(document).ready(function($) {
         }
     }
     
-    function validateAddress(address, placeId = null) {
-        if (!address || address.length < 3) return;
+    function validateAddressWithCoordinates(address, lat, lng) {
+        if (!address || !lat || !lng) return;
         
         // Show loading indicator
         showDeliveryLoading();
         
         const data = {
-            action: 'outcomer_validate_address',
+            action: 'outcomer_calculate_delivery',
             nonce: outcomerDelivery.nonce,
-            address: address
+            address: address,
+            lat: lat,
+            lng: lng
         };
-        
-        if (placeId) {
-            data.place_id = placeId;
-        }
         
         $.ajax({
             url: outcomerDelivery.ajaxUrl,
@@ -187,44 +195,33 @@ jQuery(document).ready(function($) {
     }
     
     function showDeliveryInfo(data) {
-        let infoContainer = $('#outcomer-delivery-info');
-        if (infoContainer.length === 0) {
-            infoContainer = $('<div id="outcomer-delivery-info" class="woocommerce-info"></div>');
-            $('.checkout.woocommerce-checkout').prepend(infoContainer);
-        }
-        
-        infoContainer.html(`
-            <strong>Delivery Information:</strong><br>
-            Distance: ${data.distance}km<br>
-            Zone: ${data.zone}<br>
-            Delivery cost: ${data.price} CZK
-        `).show();
+        const container = $('#outcomer-delivery-messages');
+        container.removeClass('woocommerce-error').addClass('woocommerce-info')
+            .html(`
+                <strong>Delivery Information:</strong><br>
+                Distance: ${data.distance}km<br>
+                Zone: ${data.zone}<br>
+                Delivery cost: ${data.price} CZK
+            `).show();
     }
     
     function showDeliveryError(message) {
-        let errorContainer = $('#outcomer-delivery-error');
-        if (errorContainer.length === 0) {
-            errorContainer = $('<div id="outcomer-delivery-error" class="woocommerce-error"></div>');
-            $('.checkout.woocommerce-checkout').prepend(errorContainer);
-        }
-        
-        errorContainer.html(`<strong>Delivery Error:</strong> ${message}`).show();
+        const container = $('#outcomer-delivery-messages');
+        container.removeClass('woocommerce-info').addClass('woocommerce-error')
+            .html(`<strong>Delivery Error:</strong> ${message}`).show();
     }
     
     function showDeliveryLoading() {
-        let loadingContainer = $('#outcomer-delivery-loading');
-        if (loadingContainer.length === 0) {
-            loadingContainer = $('<div id="outcomer-delivery-loading" class="woocommerce-info">Validating address...</div>');
-            $('.checkout.woocommerce-checkout').prepend(loadingContainer);
-        }
-        loadingContainer.show();
+        const container = $('#outcomer-delivery-messages');
+        container.removeClass('woocommerce-error').addClass('woocommerce-info')
+            .html('Validating address...').show();
     }
     
     function hideDeliveryLoading() {
-        $('#outcomer-delivery-loading').hide();
+        $('#outcomer-delivery-messages').hide();
     }
     
     function clearDeliveryMessages() {
-        $('#outcomer-delivery-info, #outcomer-delivery-error').hide();
+        $('#outcomer-delivery-messages').hide();
     }
 });
