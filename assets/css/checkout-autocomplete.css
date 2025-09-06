@@ -1,0 +1,82 @@
+/**
+ * Outcomer Delivery Distance - Checkout Autocomplete Styles
+ */
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Input */
+#address-input {
+	width: 100%;
+	padding: 10px 40px 10px 12px; /* справа место под крестик */
+	font-size: 16px;
+	border: 2px solid #ccc;
+	border-radius: 8px;
+	box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+	transition: border-color 0.2s;
+}
+
+#address-input:focus {
+	border-color: #007bff;
+	outline: none;
+}
+
+/* Кнопка очистки */
+.clear-button {
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	font-size: 18px;
+	color: #999;
+	user-select: none;
+	display: none;
+}
+
+.clear-button:hover {
+	color: #333;
+}
+
+/* Autocomplete suggestions for address fields */
+.outcomer-autocomplete-suggestions {
+	position: absolute;
+	background: white;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	max-height: 250px;
+	overflow-y: auto;
+	width: 100%;
+	z-index: 1000;
+	margin-top: 2px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+	display: none;
+}
+
+.outcomer-autocomplete-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.outcomer-autocomplete-item:last-child {
+	border-bottom: none;
+}
+
+.outcomer-autocomplete-item:hover, 
+.outcomer-autocomplete-item.active {
+	background-color: #007bff;
+	color: white;
+}
+
+#outcomer-delivery-messages.woocommerce-info {
+	background-color: #62A8EA;
+	border-left: 4px solid #000000;
+}
+
+#outcomer-delivery-messages.woocommerce-error {
+	background-color: #ff5d5d;
+	border-left: 4px solid #000000;
+}

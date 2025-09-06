@@ -13,6 +13,8 @@ declare(strict_types = 1);
 
 namespace OutcomerDelivery;
 
+use WC_Shipping_Rate;
+
 if (!defined('ABSPATH')) {
 	exit;
 }
@@ -133,7 +135,7 @@ class ShippingCalculator
 	/**
 	 * Check if shipping rate should use distance-based pricing
 	 */
-	private function isDistanceBasedShippingRate(\WC_Shipping_Rate $rate): bool
+	private function isDistanceBasedShippingRate(WC_Shipping_Rate $rate): bool
 	{
 		// Extract instance ID from rate ID
 		$parts = explode(':', $rate->get_id());
@@ -150,7 +152,7 @@ class ShippingCalculator
 	/**
 	 * Update rate with distance-based price
 	 */
-	private function updateRateWithDistancePrice(\WC_Shipping_Rate $rate, array $deliveryData): \WC_Shipping_Rate
+	private function updateRateWithDistancePrice(WC_Shipping_Rate $rate, array $deliveryData): WC_Shipping_Rate
 	{
 		$distance        = $deliveryData['distance'];
 		$calculatedPrice = $this->distanceCalculator->getPriceByDistance($distance);

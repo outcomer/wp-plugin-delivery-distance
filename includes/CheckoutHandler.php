@@ -13,6 +13,9 @@ declare(strict_types = 1);
 
 namespace OutcomerDelivery;
 
+use WC_Order;
+use WP_Error;
+
 if (!defined('ABSPATH')) {
 	exit;
 }
@@ -39,7 +42,7 @@ class CheckoutHandler
 	 */
 	public function init(): void
 	{
-		add_filter('woocommerce_checkout_fields', [$this, 'modifyCheckoutFields']);
+		add_filter('woocommerce_checkout_fields', [$this, 'modifyCheckoutFields'], 1010);
 		add_action('woocommerce_after_checkout_validation', [$this, 'validateCheckoutAddress'], 10, 2);
 		add_action('woocommerce_checkout_create_order', [$this, 'saveDeliveryData'], 10, 2);
 		add_action('woocommerce_checkout_process', [$this, 'processDeliveryData']);
@@ -49,7 +52,7 @@ class CheckoutHandler
 	/**
 	 * Modify checkout fields to add data attributes for autocomplete
 	 */
-	public function modifyCheckoutFields(array $fields): array
+	public function modifyCheckoutFields(array $formFields): array
 	{
 		// Add data attributes to address fields for JavaScript targeting
 		$addressFields = [
@@ -62,21 +65,23 @@ class CheckoutHandler
 		];
 
 		foreach ($addressFields as $fieldKey) {
-			if (isset($fields['billing'][$fieldKey])) {
-				$fields['billing'][$fieldKey]['custom_attributes']['data-outcomer-autocomplete'] = 'true';
+			if (isset($formFields['billing'][$fieldKey])) {
+				$formFields['billing'][$fieldKey]['custom_attributes']['data-outcomer-autocomplete'] = 'true';
+				$formFields['billing'][$fieldKey]['autocomplete'] = 'off';
 			}
-			if (isset($fields['shipping'][$fieldKey])) {
-				$fields['shipping'][$fieldKey]['custom_attributes']['data-outcomer-autocomplete'] = 'true';
+			if (isset($formFields['shipping'][$fieldKey])) {
+				$formFields['shipping'][$fieldKey]['custom_attributes']['data-outcomer-autocomplete'] = 'true';
+				$formFields['shipping'][$fieldKey]['autocomplete'] = 'off';
 			}
 		}
 
-		return $fields;
+		return $formFields;
 	}
 
 	/**
 	 * Validate address during checkout
 	 */
-	public function validateCheckoutAddress(array $data, \WP_Error $errors): void
+	public function validateCheckoutAddress(array $data, WP_Error $errors): void
 	{
 		// Get delivery data from hidden fields
 		$deliveryLat      = $_POST['outcomer_delivery_lat'] ?? null;
@@ -120,7 +125,7 @@ class CheckoutHandler
 	/**
 	 * Save delivery data to order meta
 	 */
-	public function saveDeliveryData(\WC_Order $order, array $data): void
+	public function saveDeliveryData(WC_Order $order, array $data): void
 	{
 		$deliveryLat      = $_POST['outcomer_delivery_lat'] ?? null;
 		$deliveryLng      = $_POST['outcomer_delivery_lng'] ?? null;
@@ -156,7 +161,7 @@ class CheckoutHandler
 	{
 		// Only add container before billing_address_1 field
 		if ('billing_address_1' === $key) {
-			$container = '<p id="outcomer-delivery-messages" class="form-row" style="min-height: 50px; margin: 10px 0; display: none;"></p>';
+			$container = '<p class="form-row" style="margin: 10px 0;"><span class="woocommerce-info" id="outcomer-delivery-messages" style="min-height: 50px; display: none;"></span></p>';
 			$field     = $container.$field;
 		}
 
@@ -166,7 +171,7 @@ class CheckoutHandler
 	/**
 	 * Fallback validation when JavaScript data is not available
 	 */
-	private function fallbackAddressValidation(array $data, \WP_Error $errors): void
+	private function fallbackAddressValidation(array $data, WP_Error $errors): void
 	{
 		if (!$this->isDistanceBasedShippingSelected()) {
 			return;

@@ -61,18 +61,28 @@ class Plugin
 			return;
 		}
 
-		// Google Maps JavaScript API
+		// Google Maps JavaScript API with async loading and callback
 		wp_enqueue_script(
 			'google-maps',
-			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY.'&libraries=places',
+			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY.'&libraries=places&loading=async&callback=initGoogleMapsCallback',
 			[],
 			null,
 			true
 		);
 
+		// Add async attribute to the script tag
+		add_filter('script_loader_tag', function ($tag, $handle) {
+			if ('google-maps' === $handle) {
+				return str_replace(' src', ' async src', $tag);
+			}
+
+			return $tag;
+		}, 10, 2);
+
 		// Checkout autocomplete script
 		$scriptFile    = ODD_PLUGIN_DIR.'assets/js/checkout-autocomplete.js';
 		$scriptVersion = file_exists($scriptFile) ? filemtime($scriptFile) : ODD_VERSION;
+		$scriptVersion = 1;
 
 		wp_enqueue_script(
 			'outcomer-checkout-autocomplete',
@@ -83,6 +93,17 @@ class Plugin
 			],
 			$scriptVersion,
 			true
+		);
+
+		// Enqueue CSS
+		$cssFile    = ODD_PLUGIN_DIR.'assets/css/checkout-autocomplete.css';
+		$cssVersion = file_exists($cssFile) ? filemtime($cssFile) : ODD_VERSION;
+
+		wp_enqueue_style(
+			'outcomer-checkout-autocomplete',
+			ODD_PLUGIN_URL.'assets/css/checkout-autocomplete.css',
+			[],
+			$cssVersion
 		);
 
 		// Localize script with data

@@ -169,6 +169,6 @@ class AjaxHandler
 	 */
 	private function verifyNonce(): bool
 	{
-		return wp_verify_nonce($_POST['nonce'] ?? '', 'outcomer_delivery_nonce');
+		return (bool) wp_verify_nonce($_POST['nonce'] ?? '', 'outcomer_delivery_nonce');
 	}
 }
