@@ -62,9 +62,10 @@ class Plugin
 		}
 
 		// Google Maps JavaScript API with async loading and callback
+		// Updated to use v=beta for new Places API features
 		wp_enqueue_script(
 			'google-maps',
-			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY.'&libraries=places&loading=async&callback=initGoogleMapsCallback',
+			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY.'&libraries=places&v=beta&loading=async&callback=initGoogleMapsCallback',
 			[],
 			null,
 			true
@@ -112,6 +113,15 @@ class Plugin
 			'nonce'           => wp_create_nonce('outcomer_delivery_nonce'),
 			'apiKey'          => ODD_GOOGLE_API_KEY,
 			'countryRestrict' => ODD_COUNTRY_RESTRICT,
+			'currency'        => get_woocommerce_currency(),
+			'strings'         => [
+				'deliveryInfo'      => __('Delivery Information:', 'outcomer-delivery-distance'),
+				'distance'          => __('Distance:', 'outcomer-delivery-distance'),
+				'zone'              => __('Zone:', 'outcomer-delivery-distance'),
+				'deliveryCost'      => __('Delivery cost:', 'outcomer-delivery-distance'),
+				'deliveryError'     => __('Delivery Error:', 'outcomer-delivery-distance'),
+				'validatingAddress' => __('Validating address...', 'outcomer-delivery-distance'),
+			],
 		]);
 	}
 }

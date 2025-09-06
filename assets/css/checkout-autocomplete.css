@@ -2,56 +2,80 @@
  * Outcomer Delivery Distance - Checkout Autocomplete Styles
  */
 
-.autocomplete-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-/* Input */
-#address-input {
+.outcomer-autocomplete-wrapper {
+	position: relative;
 	width: 100%;
-	padding: 10px 40px 10px 12px; /* справа место под крестик */
-	font-size: 16px;
-	border: 2px solid #ccc;
-	border-radius: 8px;
-	box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-	transition: border-color 0.2s;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
-#address-input:focus {
-	border-color: #007bff;
-	outline: none;
+/* Search icon */
+.outcomer-search-icon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1;
+	pointer-events: none;
+	display: flex;
+	align-items: center;
+	height: 24px;
 }
 
-/* Кнопка очистки */
-.clear-button {
+.outcomer-search-icon svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* Input with icons */
+.outcomer-with-icons {
+	width: 100%;
+	padding-left: 40px !important;
+	padding-right: 40px !important;
+	flex: 1;
+}
+
+/* Clear button */
+.outcomer-clear-button {
 	position: absolute;
 	right: 10px;
 	top: 50%;
 	transform: translateY(-50%);
 	cursor: pointer;
-	font-size: 18px;
-	color: #999;
-	user-select: none;
-	display: none;
+	background: none;
+	border: none;
+	padding: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
 }
 
-.clear-button:hover {
-	color: #333;
+.outcomer-clear-button:hover {
+	opacity: 0.7;
+}
+
+.outcomer-clear-button svg {
+	width: 20px;
+	height: 20px;
 }
 
 /* Autocomplete suggestions for address fields */
 .outcomer-autocomplete-suggestions {
 	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
 	background: white;
 	border: 1px solid #ccc;
-	border-radius: 8px;
+	border-radius: 4px;
 	max-height: 250px;
 	overflow-y: auto;
 	width: 100%;
 	z-index: 1000;
 	margin-top: 2px;
-	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+	box-shadow: light-dark(rgba(60, 64, 67, 0.3), rgba(0, 0, 0, 0.3)) 0px 1px 2px 0px, light-dark(rgba(60, 64, 67, 0.15), rgba(0, 0, 0, 0.15)) 0px 2px 6px 2px;
 	display: none;
 }
 
@@ -59,6 +83,9 @@
 	padding: 8px 12px;
 	cursor: pointer;
 	border-bottom: 1px solid #f0f0f0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .outcomer-autocomplete-item:last-child {
@@ -71,12 +98,122 @@
 	color: white;
 }
 
-#outcomer-delivery-messages.woocommerce-info {
+.outcomer-autocomplete-item-icon {
+	flex-shrink: 0;
+	width: 40px;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.outcomer-autocomplete-item-icon svg {
+	width: 18px;
+	height: 18px;
+	fill: #666;
+	transition: fill 0.2s;
+	background-color: light-dark(rgba(30, 30, 30, 0.1), rgba(255, 255, 255, 0.1));
+	border-radius: 50%;
+	padding: 6px;
+	box-sizing: content-box;
+}
+
+.outcomer-autocomplete-item:hover .outcomer-autocomplete-item-icon svg,
+.outcomer-autocomplete-item.active .outcomer-autocomplete-item-icon svg {
+	background-color: rgb(251 251 251);
+
+}
+
+.outcomer-autocomplete-item-text {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.outcomer-autocomplete-item-main-text {
+	font-size: 14px;
+	line-height: 1.4;
+	color: #202124;
+	font-weight: 600;
+}
+
+.outcomer-autocomplete-item-secondary-text {
+	font-size: 12px;
+	line-height: 1.3;
+	color: #70757a;
+	font-weight: 400;
+}
+
+.outcomer-autocomplete-item:hover .outcomer-autocomplete-item-main-text,
+.outcomer-autocomplete-item.active .outcomer-autocomplete-item-main-text {
+	color: white;
+}
+
+.outcomer-autocomplete-item:hover .outcomer-autocomplete-item-secondary-text,
+.outcomer-autocomplete-item.active .outcomer-autocomplete-item-secondary-text {
+	color: rgba(255, 255, 255, 0.85);
+}
+
+.outcomer-autocomplete-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #e8eaed;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.outcomer-autocomplete-item:last-child {
+	border-bottom: none;
+}
+
+.outcomer-delivery-messages.woocommerce-info {
 	background-color: #62A8EA;
 	border-left: 4px solid #000000;
 }
 
-#outcomer-delivery-messages.woocommerce-error {
+.outcomer-delivery-messages.woocommerce-error {
 	background-color: #ff5d5d;
 	border-left: 4px solid #000000;
 }
+
+/* Powered by footer */
+.outcomer-powered-by {
+	padding: 8px 12px;
+	border-top: 1px solid #d1d5db;
+	background-color: #f9fafb;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+	font-size: 11px;
+	color: #6b7280;
+	cursor: default;
+}
+
+.outcomer-powered-by-icon {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.outcomer-powered-by:hover {
+	background-color: #f9fafb;
+}
+
+.outcomer-brand {
+	font-weight: 500;
+}
+
+.outcomer-brand .letter-o1 { color: #ff6b35; }
+.outcomer-brand .letter-u { color: #f7931e; }
+.outcomer-brand .letter-t { color: #cfab00; }
+.outcomer-brand .letter-c { color: #ffb700; }
+.outcomer-brand .letter-o2 { color: #118ab2; }
+.outcomer-brand .letter-m { color: #073b4c; }
+.outcomer-brand .letter-e { color: #8338ec; }
+.outcomer-brand .letter-r { color: #e63946; }

@@ -1,0 +1,64 @@
+# Czech translation for Outcomer Delivery Distance
+# Copyright (C) 2025 Outcomer Delivery Distance
+# This file is distributed under the same license as the Outcomer Delivery Distance package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Outcomer Delivery Distance\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-01-09 12:00+0000\n"
+"PO-Revision-Date: 2025-01-09 12:00+0000\n"
+"Last-Translator: Auto Generated\n"
+"Language-Team: Czech\n"
+"Language: cs_CZ\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Poedit 1.0\n"
+
+#: includes/CheckoutHandler.php:108
+msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
+msgstr "Doručení na tuto adresu není možné. Vzdálenost: %.2fkm (max 6km)"
+
+#: includes/CheckoutHandler.php:121
+msgid "Delivery price calculation error. Please refresh and try again."
+msgstr "Chyba při výpočtu ceny doručení. Obnovte prosím stránku a zkuste to znovu."
+
+#: includes/CheckoutHandler.php:185
+msgid "Please provide a valid address for delivery calculation."
+msgstr "Zadejte prosím platnou adresu pro výpočet doručení."
+
+#: includes/CheckoutHandler.php:197
+msgid "Unable to validate the provided address. Please check and try again."
+msgstr "Nepodařilo se ověřit zadanou adresu. Zkontrolujte ji prosím a zkuste to znovu."
+
+#: includes/CheckoutHandler.php:212
+msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
+msgstr "Doručení na tuto adresu není možné. Vzdálenost: %.2fkm (max 6km)"
+
+#: includes/CheckoutHandler.php:214
+msgid "Powered by"
+msgstr "Vytvořeno pomocí"
+
+#: includes/Plugin.php:118
+msgid "Delivery Information:"
+msgstr "Informace o doručení:"
+
+#: includes/Plugin.php:119
+msgid "Distance:"
+msgstr "Vzdálenost:"
+
+#: includes/Plugin.php:120
+msgid "Zone:"
+msgstr "Zóna:"
+
+#: includes/Plugin.php:121
+msgid "Delivery cost:"
+msgstr "Cena doručení:"
+
+#: includes/Plugin.php:122
+msgid "Delivery Error:"
+msgstr "Chyba doručení:"
+
+#: includes/Plugin.php:123
+msgid "Validating address..."
+msgstr "Ověřuji adresu..."

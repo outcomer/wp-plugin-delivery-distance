@@ -1,35 +1,91 @@
+// Google Maps callback function
+window.initGoogleMapsCallback = function () {
+	window.googleMapsReady = true;
+	// Trigger custom event to notify that Google Maps is ready
+	jQuery(document).trigger('googlemaps:ready');
+};
+
 // Wait for DOM and jQuery to be ready
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
 	let selectedIndex = -1;
 	let predictions = [];
 	let activeInput = null;
 	let activeSuggestions = null;
 
-	// Initialize autocomplete for address fields
-	initAutocomplete('#billing_address_1');
-	initAutocomplete('#shipping_address_1');
+	// Wait for Google Maps to be ready before initializing
+	function initWhenReady() {
+		if (window.googleMapsReady) {
+			initAutocomplete('#billing_address_1');
+			initAutocomplete('#shipping_address_1');
+		} else {
+			// If Google Maps is not ready, wait for it
+			$(document).on('googlemaps:ready', function () {
+				initAutocomplete('#billing_address_1');
+				initAutocomplete('#shipping_address_1');
+			});
+		}
+	}
+
+	initWhenReady();
 
 	function initAutocomplete(inputSelector) {
 		const input = $(inputSelector)[0];
 		if (!input) return;
 
-		// Create suggestions container
-		const suggestionsContainer = document.createElement('div');
-		suggestionsContainer.className = 'outcomer-autocomplete-suggestions';
-		suggestionsContainer.style.display = 'none';
-		input.parentNode.insertBefore(suggestionsContainer, input.nextSibling);
+		// Clone wrapper template from PHP-generated HTML
+		const template = $('#outcomer-autocomplete-templates .outcomer-autocomplete-wrapper');
+		if (!template.length) {
+			return;
+		}
+
+		const wrapper = template.clone()[0];
+
+		// Get references to elements in cloned wrapper
+		const searchIcon = wrapper.querySelector('.outcomer-search-icon');
+		const clearButton = wrapper.querySelector('.outcomer-clear-button');
+		const suggestionsContainer = wrapper.querySelector('.outcomer-autocomplete-suggestions');
+
+		// Insert wrapper before input
+		input.parentNode.insertBefore(wrapper, input);
+
+		// Move input into wrapper (after search icon, before clear button)
+		searchIcon.insertAdjacentElement('afterend', input);
+
+		// Add class to input
+		$(input).addClass('outcomer-with-icons');
+
+		// Clear button handler
+		$(clearButton).on('click', function (e) {
+			e.preventDefault();
+			input.value = '';
+			$(input).trigger('input').trigger('change');
+			clearButton.style.display = 'none';
+			hideSuggestions();
+		});
+
+		// Show clear button if input has initial value
+		if (input.value.length > 0) {
+			clearButton.style.display = 'block';
+		}
 
 		// Bind events to this specific input
-		bindAutocompleteEvents(input, suggestionsContainer);
+		bindAutocompleteEvents(input, suggestionsContainer, clearButton);
 	}
 
-	function bindAutocompleteEvents(input, suggestionsContainer) {
+	function bindAutocompleteEvents(input, suggestionsContainer, clearButton) {
 		// Input event handler
-		$(input).on('input', async function() {
+		$(input).on('input', async function () {
 			const query = this.value;
 			activeInput = this;
 			activeSuggestions = suggestionsContainer;
-			
+
+			// Show/hide clear button based on input value
+			if (query.length > 0) {
+				clearButton.style.display = 'block';
+			} else {
+				clearButton.style.display = 'none';
+			}
+
 			if (query.length < 2) {
 				hideSuggestions();
 				return;
@@ -41,17 +97,17 @@ jQuery(document).ready(function($) {
 		});
 
 		// Keydown event handler
-		$(input).on('keydown', function(e) {
+		$(input).on('keydown', function (e) {
 			handleKeyNavigation(e, suggestionsContainer);
 		});
 
 		// Hide suggestions when input loses focus (with delay for clicks)
-		$(input).on('blur', function() {
+		$(input).on('blur', function () {
 			setTimeout(() => hideSuggestions(), 150);
 		});
 
 		// Show suggestions when input gets focus and has value
-		$(input).on('focus', function() {
+		$(input).on('focus', function () {
 			if (this.value && predictions.length > 0) {
 				showSuggestions(suggestionsContainer);
 			}
@@ -67,23 +123,61 @@ jQuery(document).ready(function($) {
 		$(container).show();
 	}
 
-// Запрос к Google Places API
-async function getPredictions(query) {
-	if (!query) return [];
-	return new Promise((resolve) => {
-		const service = new google.maps.places.AutocompleteService();
-		service.getPlacePredictions(
-			{ input: query, componentRestrictions: { country: outcomerDelivery.countryRestrict } },
-			(preds, status) => {
-				if (status === google.maps.places.PlacesServiceStatus.OK) {
-					resolve(preds);
-				} else {
-					resolve([]);
-				}
+	// Запрос к Google Places API (new AutocompleteSuggestion API)
+	async function getPredictions(query) {
+		if (!query) return [];
+
+		try {
+			// Import the Places library if not already loaded
+			const { AutocompleteSuggestion, AutocompleteSessionToken } =
+				await google.maps.importLibrary("places");
+
+			// Create a new session token for this search session
+			if (!window.outcomerSessionToken) {
+				window.outcomerSessionToken = new AutocompleteSessionToken();
 			}
-		);
-	});
-}
+
+			// Create request object with the new API structure
+			const request = {
+				input: query,
+				includedRegionCodes: outcomerDelivery.countryRestrict, // Changed from componentRestrictions.country
+				sessionToken: window.outcomerSessionToken,
+				language: 'cs' // Czech language for Czech Republic
+			};
+
+			// Fetch suggestions using the new API
+			const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+			// Transform suggestions to match the old format for compatibility
+			const predictions = suggestions.map(suggestion => {
+				// Extract main text - usually the street/place name
+				const fullText = suggestion.placePrediction.text?.text || '';
+				const secondaryText = suggestion.placePrediction.secondaryText?.text || '';
+
+				// Try to get just the street/place name without the full address
+				let mainText = fullText;
+				if (secondaryText && fullText.includes(secondaryText)) {
+					// Remove the secondary part from the full text to get just the main part
+					mainText = fullText.replace(`, ${secondaryText}`, '').replace(secondaryText, '');
+				}
+
+				return {
+					place_id: suggestion.placePrediction.placeId,
+					description: fullText,
+					structured_formatting: {
+						main_text: mainText.trim(),
+						secondary_text: secondaryText
+					},
+					_suggestion: suggestion // Store original for later use
+				};
+			});
+
+			return predictions;
+		} catch (error) {
+			console.error('Error fetching predictions:', error);
+			return [];
+		}
+	}
 
 	// Render suggestions list
 	function renderSuggestions(items, container) {
@@ -92,47 +186,112 @@ async function getPredictions(query) {
 			$(container).hide();
 			return;
 		}
-		
+
+		// Get item template
+		const itemTemplate = $('#outcomer-autocomplete-templates .outcomer-autocomplete-item');
+		if (!itemTemplate.length) {
+			return;
+		}
+
 		items.forEach((item, i) => {
-			const div = document.createElement('div');
-			div.className = 'outcomer-autocomplete-item';
-			div.textContent = item.description;
-			div.addEventListener('click', () => selectSuggestion(i));
-			container.appendChild(div);
+			// Clone template
+			const itemElement = itemTemplate.clone()[0];
+
+			// Fill in the text
+			const mainText = itemElement.querySelector('.outcomer-autocomplete-item-main-text');
+			const secondaryText = itemElement.querySelector('.outcomer-autocomplete-item-secondary-text');
+
+			mainText.textContent = item.structured_formatting.main_text || item.description;
+
+			if (item.structured_formatting.secondary_text) {
+				secondaryText.textContent = item.structured_formatting.secondary_text;
+			} else {
+				// Hide secondary text if not needed
+				secondaryText.style.display = 'none';
+			}
+
+			// Add click handler
+			itemElement.addEventListener('click', () => selectSuggestion(i));
+
+			// Append to container
+			container.appendChild(itemElement);
 		});
-		
+
+		// Add "Powered by" footer
+		const poweredByTemplate = $('#outcomer-autocomplete-templates .outcomer-powered-by');
+		if (poweredByTemplate.length) {
+			const poweredByElement = poweredByTemplate.clone()[0];
+			container.appendChild(poweredByElement);
+		}
+
 		$(container).show();
 	}
 
 	// Select suggestion
-	function selectSuggestion(index) {
+	async function selectSuggestion(index) {
 		const item = predictions[index];
 		if (!item || !activeInput) return;
 
-		const service = new google.maps.places.PlacesService(document.createElement('div'));
-		service.getDetails({ 
-			placeId: item.place_id, 
-			fields: ['formatted_address', 'geometry', 'address_components'] 
-		}, (place, status) => {
-			if (status === google.maps.places.PlacesServiceStatus.OK) {
+		try {
+			// If we have the new suggestion object, use it
+			if (item._suggestion) {
+				// Convert to Place and fetch required fields
+				const place = await item._suggestion.placePrediction.toPlace();
+				await place.fetchFields({
+					fields: ['formattedAddress', 'location', 'addressComponents']
+				});
+
+				// Clear the session token after place selection (ends the session)
+				window.outcomerSessionToken = null;
+
 				// Update the active input field
-				activeInput.value = place.formatted_address || '';
+				activeInput.value = place.formattedAddress || '';
 				$(activeInput).trigger('change');
-				
+
+				// Transform to match old format for fillAddressFieldsNew
+				const placeData = {
+					formatted_address: place.formattedAddress,
+					address_components: place.addressComponents,
+					geometry: {
+						location: place.location
+					}
+				};
+
 				// Fill all address fields
-				fillAddressFieldsNew(place, null);
-				
+				fillAddressFieldsNew(placeData, null);
+
 				// Validate and calculate delivery cost
-				if (place.geometry?.location) {
-					const lat = place.geometry.location.lat();
-					const lng = place.geometry.location.lng();
-					validateAddressWithCoordinates(place.formatted_address, lat, lng);
+				if (place.location) {
+					const lat = place.location.lat();
+					const lng = place.location.lng();
+					validateAddressWithCoordinates(place.formattedAddress, lat, lng);
 				}
-				
+
 				// Hide suggestions
 				hideSuggestions();
+			} else {
+				// Fallback to old API if somehow we don't have the new suggestion
+				const service = new google.maps.places.PlacesService(document.createElement('div'));
+				service.getDetails({
+					placeId: item.place_id,
+					fields: ['formatted_address', 'geometry', 'address_components']
+				}, (place, status) => {
+					if (status === google.maps.places.PlacesServiceStatus.OK) {
+						activeInput.value = place.formatted_address || '';
+						$(activeInput).trigger('change');
+						fillAddressFieldsNew(place, null);
+						if (place.geometry?.location) {
+							const lat = place.geometry.location.lat();
+							const lng = place.geometry.location.lng();
+							validateAddressWithCoordinates(place.formatted_address, lat, lng);
+						}
+						hideSuggestions();
+					}
+				});
 			}
-		});
+		} catch (error) {
+			console.error('Error selecting suggestion:', error);
+		}
 	}
 
 	// Handle keyboard navigation
@@ -168,19 +327,19 @@ async function getPredictions(query) {
 	function initializePrefill() {
 		const billingInput = $('#billing_address_1')[0];
 		const shippingInput = $('#shipping_address_1')[0];
-		
+
 		[billingInput, shippingInput].forEach(input => {
 			if (input && input.value) {
 				geocodeExistingAddress(input.value);
 			}
 		});
 	}
-	
+
 	function geocodeExistingAddress(address) {
 		const geocoder = new google.maps.Geocoder();
-		geocoder.geocode({ 
-			address: address, 
-			componentRestrictions: { country: outcomerDelivery.countryRestrict[0] || 'CZ' } 
+		geocoder.geocode({
+			address: address,
+			componentRestrictions: { country: outcomerDelivery.countryRestrict[0] || 'CZ' }
 		}, (results, status) => {
 			if (status === google.maps.GeocoderStatus.OK && results.length) {
 				fillAddressFieldsNew(results[0], null);
@@ -192,83 +351,83 @@ async function getPredictions(query) {
 			}
 		});
 	}
-	
+
 	// Initialize prefill after a delay to ensure WooCommerce has populated fields
 	setTimeout(initializePrefill, 500);
 
 	// Function to fill address fields from place data
-	window.fillAddressFieldsNew = function(place, fieldSet) {
-	
-	const components = place.address_components || [];
-	let streetNumber = '';
-	let premise = '';
-	let route = '';
-	let city = '';
-	let postalCode = '';
+	window.fillAddressFieldsNew = function (place, fieldSet) {
 
-	components.forEach(component => {
-		const types = component.types;
+		const components = place.address_components || [];
+		let streetNumber = '';
+		let premise = '';
+		let route = '';
+		let city = '';
+		let postalCode = '';
 
-		if (types.includes('street_number')) {
-			streetNumber = component.long_name;
-		}
-		if (types.includes('premise')) {
-			premise = component.long_name;
-		}
-		if (types.includes('route')) {
-			route = component.long_name;
-		}
-		if (types.includes('locality') || types.includes('sublocality') || types.includes('administrative_area_level_1')) {
-			city = component.long_name;
-		}
-		if (types.includes('postal_code')) {
-			postalCode = component.long_name;
-		}
-	});
+		components.forEach(component => {
+			const types = component.types;
 
-	// Build address: "U Radosti 225/1"
-	let addressParts = [];
-	if (route) addressParts.push(route);
-	if (premise && streetNumber) {
-		addressParts.push(premise + '/' + streetNumber);
-	} else if (premise) {
-		addressParts.push(premise);
-	} else if (streetNumber) {
-		addressParts.push(streetNumber);
-	}
+			if (types.includes('street_number')) {
+				streetNumber = component.long_name;
+			}
+			if (types.includes('premise')) {
+				premise = component.long_name;
+			}
+			if (types.includes('route')) {
+				route = component.long_name;
+			}
+			if (types.includes('locality') || types.includes('sublocality') || types.includes('administrative_area_level_1')) {
+				city = component.long_name;
+			}
+			if (types.includes('postal_code')) {
+				postalCode = component.long_name;
+			}
+		});
 
-	const fullAddress = addressParts.join(' ');
-	if (fullAddress) {
-		$('#billing_address_1').val(fullAddress).trigger('change');
-		$('#shipping_address_1').val(fullAddress).trigger('change');
-	}
+		// Build address: "U Radosti 225/1"
+		let addressParts = [];
+		if (route) addressParts.push(route);
+		if (premise && streetNumber) {
+			addressParts.push(premise + '/' + streetNumber);
+		} else if (premise) {
+			addressParts.push(premise);
+		} else if (streetNumber) {
+			addressParts.push(streetNumber);
+		}
 
-	// Fill city
-	if (city) {
-		const billingCity = $('#billing_city');
-		const shippingCity = $('#shipping_city');
-		
-		if (billingCity.length) {
-			billingCity.val(city).trigger('change');
+		const fullAddress = addressParts.join(' ');
+		if (fullAddress) {
+			$('#billing_address_1').val(fullAddress).trigger('change');
+			$('#shipping_address_1').val(fullAddress).trigger('change');
 		}
-		if (shippingCity.length) {
-			shippingCity.val(city).trigger('change');
-		}
-	}
 
-	// Fill postcode
-	if (postalCode) {
-		const billingPostcode = $('#billing_postcode');
-		const shippingPostcode = $('#shipping_postcode');
-		
-		if (billingPostcode.length) {
-			billingPostcode.val(postalCode).trigger('change');
+		// Fill city
+		if (city) {
+			const billingCity = $('#billing_city');
+			const shippingCity = $('#shipping_city');
+
+			if (billingCity.length) {
+				billingCity.val(city).trigger('change');
+			}
+			if (shippingCity.length) {
+				shippingCity.val(city).trigger('change');
+			}
 		}
-		if (shippingPostcode.length) {
-			shippingPostcode.val(postalCode).trigger('change');
+
+		// Fill postcode
+		if (postalCode) {
+			const billingPostcode = $('#billing_postcode');
+			const shippingPostcode = $('#shipping_postcode');
+
+			if (billingPostcode.length) {
+				billingPostcode.val(postalCode).trigger('change');
+			}
+			if (shippingPostcode.length) {
+				shippingPostcode.val(postalCode).trigger('change');
+			}
 		}
-	}
-	
+
 		// Trigger WooCommerce update after all fields are filled
 		setTimeout(() => {
 			$('body').trigger('update_checkout');
@@ -307,38 +466,57 @@ async function getPredictions(query) {
 		`);
 	}
 
+	function getDeliveryMessageContainer() {
+		// Find the closest delivery message container to the active input
+		if (activeInput) {
+			const wrapper = $(activeInput).closest('.outcomer-autocomplete-wrapper');
+			if (wrapper.length) {
+				// Look for the message container before the wrapper's parent
+				const container = wrapper.parent().prevAll().find('.outcomer-delivery-messages').first();
+				if (container.length) {
+					return container;
+				}
+			}
+		}
+		// Fallback to any visible delivery message container
+		return $('.outcomer-delivery-messages:visible').first().length ?
+			$('.outcomer-delivery-messages:visible').first() :
+			$('.outcomer-delivery-messages').first();
+	}
+
 	function showDeliveryInfo(data) {
-		const container = $('#outcomer-delivery-messages');
+		const container = getDeliveryMessageContainer();
 		container.removeClass('woocommerce-error')
 			.html(`
-				<strong>Delivery Information:</strong><br>
-				Distance: ${data.distance}km<br>
-				Zone: ${data.zone}<br>
-				Delivery cost: ${data.price} CZK
+				<strong>${outcomerDelivery.strings.deliveryInfo}</strong><br>
+				${outcomerDelivery.strings.distance} ${data.distance}km<br>
+				${outcomerDelivery.strings.zone} ${data.zone}<br>
+				${outcomerDelivery.strings.deliveryCost} ${data.price} ${outcomerDelivery.currency}
 			`).show();
 	}
 
 	function showDeliveryError(message) {
-		const container = $('#outcomer-delivery-messages');
+		const container = getDeliveryMessageContainer();
 		container.addClass('woocommerce-error')
-			.html(`<strong>Delivery Error:</strong> ${message}`).show();
+			.html(`<strong>${outcomerDelivery.strings.deliveryError}</strong> ${message}`).show();
 	}
 
 	function showDeliveryLoading() {
-		const container = $('#outcomer-delivery-messages');
+		const container = getDeliveryMessageContainer();
 		container.removeClass('woocommerce-error')
-			.html('Validating address...').show();
+			.html(outcomerDelivery.strings.validatingAddress).show();
 	}
 
 	function hideDeliveryLoading() {
-		$('#outcomer-delivery-messages').hide();
+		const container = getDeliveryMessageContainer();
+		container.hide();
 	}
 
 	function clearDeliveryMessages() {
-		$('#outcomer-delivery-messages').hide();
+		$('.outcomer-delivery-messages').hide();
 	}
 
-	window.validateAddressWithCoordinates = function(address, lat, lng) {
+	window.validateAddressWithCoordinates = function (address, lat, lng) {
 		if (!address || !lat || !lng) return;
 
 		// Show loading indicator

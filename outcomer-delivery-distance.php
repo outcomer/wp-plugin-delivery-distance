@@ -24,8 +24,8 @@ define('ODD_VERSION', '1.0.0');
 
 // Configuration constants
 define('ODD_GOOGLE_API_KEY', 'AIzaSyA-gpgh1bFH3RM0277dI38fNDWDkvY8F7M');
-define('ODD_STORE_LAT', 50.1260);
-define('ODD_STORE_LNG', 14.4698);
+define('ODD_STORE_LAT', 50.0707499);
+define('ODD_STORE_LNG', 14.4583567);
 define('ODD_COUNTRY_RESTRICT', ['CZ']);
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
 
@@ -36,6 +36,20 @@ define('ODD_DISTANCE_PRICING', [
 	6           => 160,   // 3-6km
 	PHP_INT_MAX => false, // > 6km - no delivery
 ]);
+
+/**
+ * Load plugin textdomain for translations
+ */
+function loadOutcomerDeliveryTextdomain(): void
+{
+	load_plugin_textdomain(
+		'outcomer-delivery-distance',
+		false,
+		dirname(plugin_basename(__FILE__)) . '/languages'
+	);
+}
+
+add_action('plugins_loaded', 'loadOutcomerDeliveryTextdomain');
 
 /**
  * Check if WooCommerce is active
