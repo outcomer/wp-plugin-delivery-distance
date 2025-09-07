@@ -31,12 +31,13 @@ define('ODD_STORE_LNG', 14.4583567);
 define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
 
-// Distance pricing tiers (in km => price in CZK)
-define('ODD_DISTANCE_PRICING', [
-	1           => 100,   // < 1km
-	3           => 150,   // 1-3km
-	6           => 160,   // 3-6km
-	PHP_INT_MAX => false, // > 6km - no delivery
+// Distance range matchers for shipping class slugs
+define('ODD_DISTANCE_MATCHERS', [
+	// Pattern => callback that returns [min_km, max_km] or false
+	'/^(\d+)-(\d+)-km$/' => fn($matches) => [
+		'min' => (float) $matches[1],
+		'max' => (float) $matches[2],
+	],
 ]);
 
 /**

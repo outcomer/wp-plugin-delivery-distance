@@ -45,14 +45,6 @@ define('ODD_COUNTRY_RESTRICT', ['CZ']);
 
 // Shipping method IDs to apply logic
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
-
-// Pricing tiers (distance in km => price in CZK)
-define('ODD_DISTANCE_PRICING', [
-    1 => 100,   // < 1km = 100 CZK
-    3 => 150,   // 1-3km = 150 CZK  
-    6 => 160,   // 3-6km = 160 CZK
-    PHP_INT_MAX => false // > 6km = delivery unavailable
-]);
 ```
 
 ## Shipping Method Setup

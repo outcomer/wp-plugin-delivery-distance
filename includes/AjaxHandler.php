@@ -179,5 +179,4 @@ class AjaxHandler
 	{
 		return (bool) wp_verify_nonce($_POST['nonce'] ?? '', 'outcomer_delivery_nonce');
 	}
-
 }

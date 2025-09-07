@@ -40,7 +40,6 @@ class ShippingCalculator
 	public function init(): void
 	{
 		add_filter('woocommerce_package_rates', [$this, 'modifyShippingRates'], 10, 2);
-		add_action('woocommerce_checkout_update_order_review', [$this, 'updateOrderReview']);
 	}
 
 	/**
@@ -52,85 +51,43 @@ class ShippingCalculator
 			return $rates;
 		}
 
-		$deliveryData = $this->getDeliveryDataFromSession();
+		// Get delivery address from package
+		$address = $this->getAddressFromPackage($package);
 
-		if (!$deliveryData) {
-			return $rates;
+		// If no address or geocoding fails, keep the method but don't update price
+		if (empty($address)) {
+			return $rates; // Keep default rates
 		}
+
+		// Use geocoder to get coordinates
+		$geocoder     = new Geocoder();
+		$locationData = $geocoder->geocodeAddress($address);
+
+		if (!$locationData) {
+			return $rates; // Keep default rates if geocoding fails
+		}
+
+		// Calculate distance
+		$distance = $this->distanceCalculator->calculateDistanceFromStore(
+			$locationData['lat'],
+			$locationData['lng']
+		);
 
 		foreach ($rates as $rateId => $rate) {
 			if ($this->isDistanceBasedShippingRate($rate)) {
-				$rates[$rateId] = $this->updateRateWithDistancePrice($rate, $deliveryData);
+				$updatedRate = $this->updateRateWithDistance($rate, $distance);
+				// Only update if we got a valid rate back
+				if (!is_null($updatedRate)) {
+					$rates[$rateId] = $updatedRate;
+				}
+				// If null returned (distance too far), keep the original rate
+				// This allows the method to stay visible with default price
 			}
 		}
 
 		return $rates;
 	}
 
-	/**
-	 * Handle order review updates
-	 */
-	public function updateOrderReview($postedData): void
-	{
-		// Parse posted data to get delivery information
-		parse_str($postedData, $data);
-
-		$deliveryLat      = $data['outcomer_delivery_lat'] ?? null;
-		$deliveryLng      = $data['outcomer_delivery_lng'] ?? null;
-		$deliveryDistance = $data['outcomer_delivery_distance'] ?? null;
-		$deliveryPrice    = $data['outcomer_delivery_price'] ?? null;
-
-		if ($deliveryLat && $deliveryLng && $deliveryDistance && $deliveryPrice) {
-			// Store in session for use in shipping rate calculation
-			WC()->session->set('outcomer_delivery_data', [
-				'lat'       => (float) $deliveryLat,
-				'lng'       => (float) $deliveryLng,
-				'distance'  => (float) $deliveryDistance,
-				'price'     => (int) $deliveryPrice,
-				'timestamp' => time(),
-			]);
-		}
-	}
-
-	/**
-	 * Clear delivery data from session
-	 */
-	public function clearDeliveryData(): void
-	{
-		WC()->session->__unset('outcomer_delivery_data');
-	}
-
-	/**
-	 * Get available delivery zones info
-	 */
-	public static function getDeliveryZonesInfo(): array
-	{
-		$zones      = [];
-		$zoneNumber = 1;
-
-		foreach (ODD_DISTANCE_PRICING as $maxDistance => $price) {
-			if (false === $price) {
-				break; // Skip "no delivery" zone
-			}
-
-			$prevDistance = 0;
-			if ($zoneNumber > 1) {
-				$keys         = array_keys(ODD_DISTANCE_PRICING);
-				$prevDistance = $keys[$zoneNumber - 2];
-			}
-
-			$zones[] = [
-				'zone'          => $zoneNumber,
-				'distance_from' => $prevDistance,
-				'distance_to'   => $maxDistance,
-				'price'         => $price,
-			];
-
-			$zoneNumber++;
-		}
-
-		return $zones;
-	}
 
 	/**
 	 * Check if shipping rate should use distance-based pricing
@@ -152,66 +109,60 @@ class ShippingCalculator
 	/**
 	 * Update rate with distance-based price
 	 */
-	private function updateRateWithDistancePrice(WC_Shipping_Rate $rate, array $deliveryData): WC_Shipping_Rate
+	private function updateRateWithDistance(WC_Shipping_Rate $rate, float $distance): ?WC_Shipping_Rate
 	{
-		$distance        = $deliveryData['distance'];
+		// Get shipping class based on distance
+		$shippingClassId = $this->distanceCalculator->getShippingClassByDistance($distance);
+
+		if (false === $shippingClassId) {
+			// Distance too far - no delivery available
+			// Remove rate from available options
+			return null;
+		}
+
+		// Get price for this shipping class
 		$calculatedPrice = $this->distanceCalculator->getPriceByDistance($distance);
 
 		if (false === $calculatedPrice) {
-			// Distance too far - hide this shipping method
-			$rate->add_meta_data('_outcomer_delivery_unavailable', true);
-
-			return $rate;
+			return null;
 		}
 
 		// Update rate cost
 		$rate->set_cost($calculatedPrice);
 
-		// Update rate label to include distance info
-		$originalLabel = $rate->get_label();
-		$zone          = $this->distanceCalculator->getDeliveryZone($distance);
-		$newLabel      = sprintf(
-			'%s (Distance: %.1fkm, Zone: %d)',
-			$originalLabel,
-			$distance,
-			$zone
-		);
-		$rate->set_label($newLabel);
-
 		// Add meta data for debugging
 		$rate->add_meta_data('_outcomer_distance', $distance);
-		$rate->add_meta_data('_outcomer_zone', $zone);
+		$rate->add_meta_data('_outcomer_shipping_class_id', $shippingClassId);
 		$rate->add_meta_data('_outcomer_calculated_price', $calculatedPrice);
 
 		return $rate;
 	}
 
 	/**
-	 * Get delivery data from session or other sources
+	 * Get address from package
 	 */
-	private function getDeliveryDataFromSession(): array|null
+	private function getAddressFromPackage(array $package): string
 	{
-		// Try to get from WooCommerce session first
-		$sessionData = WC()->session->get('outcomer_delivery_data');
+		$destination = $package['destination'] ?? [];
 
-		if ($sessionData && is_array($sessionData)) {
-			// Check if data is not too old (5 minutes)
-			if (isset($sessionData['timestamp']) && (time() - $sessionData['timestamp']) < 300) {
-				return $sessionData;
-			}
+		$addressParts = [];
+
+		if (!empty($destination['address'])) {
+			$addressParts[] = $destination['address'];
+		}
+		if (!empty($destination['city'])) {
+			$addressParts[] = $destination['city'];
+		}
+		if (!empty($destination['postcode'])) {
+			$addressParts[] = $destination['postcode'];
 		}
 
-		// Try to get from POST data (during AJAX update)
-		if (!empty($_POST['outcomer_delivery_distance']) && !empty($_POST['outcomer_delivery_price'])) {
-			return [
-				'lat'       => (float) ($_POST['outcomer_delivery_lat'] ?? 0),
-				'lng'       => (float) ($_POST['outcomer_delivery_lng'] ?? 0),
-				'distance'  => (float) $_POST['outcomer_delivery_distance'],
-				'price'     => (int) $_POST['outcomer_delivery_price'],
-				'timestamp' => time(),
-			];
+		// Add country from settings
+		$countries = ODD_COUNTRY_RESTRICT;
+		if (!empty($countries)) {
+			$addressParts[] = reset($countries);
 		}
 
-		return null;
+		return trim(implode(', ', array_filter($addressParts)));
 	}
 }

@@ -430,10 +430,6 @@ jQuery(document).ready(function ($) {
 
 	function handleValidAddress(data) {
 		clearDeliveryMessages();
-
-		// Store delivery data in session/form
-		storeDeliveryData(data);
-
 		// Show delivery information
 		showDeliveryInfo(data);
 	}
@@ -441,12 +437,6 @@ jQuery(document).ready(function ($) {
 	function handleInvalidAddress(errorMessage) {
 		clearDeliveryMessages();
 		showDeliveryError(errorMessage);
-	}
-
-	function storeDeliveryData(data) {
-		// Server will calculate coordinates and distance from address
-		// Only store UI display data for user feedback
-		window.outcomerDeliveryData = data;
 	}
 
 	function getDeliveryMessageContainer() {
