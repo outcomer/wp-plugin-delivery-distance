@@ -450,21 +450,8 @@ jQuery(document).ready(function ($) {
 	}
 
 	function getDeliveryMessageContainer() {
-		// Find the closest delivery message container to the active input
-		if (activeInput) {
-			const wrapper = $(activeInput).closest('.outcomer-autocomplete-wrapper');
-			if (wrapper.length) {
-				// Look for the message container before the wrapper's parent
-				const container = wrapper.parent().prevAll().find('.outcomer-delivery-messages').first();
-				if (container.length) {
-					return container;
-				}
-			}
-		}
-		// Fallback to any visible delivery message container
-		return $('.outcomer-delivery-messages:visible').first().length ?
-			$('.outcomer-delivery-messages:visible').first() :
-			$('.outcomer-delivery-messages').first();
+		// Always use the container in review order table
+		return $('.outcomer-delivery-messages').first();
 	}
 
 	function showDeliveryInfo(data) {

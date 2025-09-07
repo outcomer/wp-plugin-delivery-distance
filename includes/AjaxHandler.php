@@ -81,7 +81,7 @@ class AjaxHandler
 		}
 
 		// Check if distance-based shipping is selected
-		if (!$this->isDistanceBasedShippingSelected()) {
+		if (!ShippingChecker::isDistanceBasedShippingSelected()) {
 			wp_send_json_error('Distance calculation not needed for selected shipping method');
 		}
 
@@ -180,28 +180,4 @@ class AjaxHandler
 		return (bool) wp_verify_nonce($_POST['nonce'] ?? '', 'outcomer_delivery_nonce');
 	}
 
-	/**
-	 * Check if distance-based shipping method is selected
-	 */
-	private function isDistanceBasedShippingSelected(): bool
-	{
-		$chosenMethods = WC()->session->get('chosen_shipping_methods');
-
-		if (empty($chosenMethods)) {
-			return false;
-		}
-
-		foreach ($chosenMethods as $method) {
-			// Extract instance ID from method (e.g., "flat_rate:2" -> "2")
-			$parts = explode(':', $method);
-			if (count($parts) >= 2) {
-				$instanceId = (int) $parts[1];
-				if (in_array($instanceId, ODD_ENABLED_SHIPPING_INSTANCE_IDS)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
 }

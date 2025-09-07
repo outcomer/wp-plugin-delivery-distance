@@ -46,7 +46,7 @@ class CheckoutHandler
 		add_action('woocommerce_after_checkout_validation', [$this, 'validateCheckoutAddress'], 10, 2);
 		add_action('woocommerce_checkout_create_order', [$this, 'saveDeliveryData'], 10, 2);
 		add_action('woocommerce_checkout_process', [$this, 'processDeliveryData']);
-		add_filter('woocommerce_form_field_text', [$this, 'addMessageContainerBeforeAddressField'], 10, 4);
+		add_action('woocommerce_review_order_before_shipping', [$this, 'addDeliveryMessageContainer']);
 		add_action('woocommerce_before_checkout_form', [$this, 'addAutocompleteTemplates']);
 	}
 
@@ -85,7 +85,7 @@ class CheckoutHandler
 	public function validateCheckoutAddress(array $data, WP_Error $errors): void
 	{
 		// Check if selected shipping method requires distance validation
-		if (!$this->isDistanceBasedShippingSelected()) {
+		if (!ShippingChecker::isDistanceBasedShippingSelected()) {
 			return; // Skip validation if distance-based shipping is not selected
 		}
 
@@ -142,7 +142,7 @@ class CheckoutHandler
 	public function saveDeliveryData(WC_Order $order, array $data): void
 	{
 		// Only save delivery data if distance-based shipping is selected
-		if (!$this->isDistanceBasedShippingSelected()) {
+		if (!ShippingChecker::isDistanceBasedShippingSelected()) {
 			return;
 		}
 
@@ -166,7 +166,7 @@ class CheckoutHandler
 	 */
 	public function processDeliveryData(): void
 	{
-		if (!$this->isDistanceBasedShippingSelected()) {
+		if (!ShippingChecker::isDistanceBasedShippingSelected()) {
 			return;
 		}
 
@@ -175,17 +175,17 @@ class CheckoutHandler
 	}
 
 	/**
-	 * Add delivery message container before billing_address_1 and shipping_address_1 fields
+	 * Add delivery message container in review order section
 	 */
-	public function addMessageContainerBeforeAddressField(string $field, string $key, array $args, string $value): string
+	public function addDeliveryMessageContainer(): void
 	{
-		// Add container before billing_address_1 and shipping_address_1 fields
-		if (in_array($key, ['billing_address_1', 'shipping_address_1'])) {
-			$container = '<p class="form-row" style="margin: 10px 0;"><span class="woocommerce-info outcomer-delivery-messages" style="min-height: 50px; display: none;"></span></p>';
-			$field     = $container.$field;
-		}
-
-		return $field;
+		?>
+		<tr class="outcomer-delivery-info">
+			<td colspan="2">
+				<div class="woocommerce-info outcomer-delivery-messages" style="display: none; margin: 10px 0;"></div>
+			</td>
+		</tr>
+		<?php
 	}
 
 	/**
@@ -240,30 +240,6 @@ class CheckoutHandler
 		<?php
 	}
 
-	/**
-	 * Check if distance-based shipping method is selected
-	 */
-	private function isDistanceBasedShippingSelected(): bool
-	{
-		$chosenMethods = WC()->session->get('chosen_shipping_methods');
-
-		if (empty($chosenMethods)) {
-			return false;
-		}
-
-		foreach ($chosenMethods as $method) {
-			// Extract instance ID from method (e.g., "flat_rate:2" -> "2")
-			$parts = explode(':', $method);
-			if (count($parts) >= 2) {
-				$instanceId = (int) $parts[1];
-				if (in_array($instanceId, ODD_ENABLED_SHIPPING_INSTANCE_IDS)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
 
 	/**
 	 * Build address string from checkout data
