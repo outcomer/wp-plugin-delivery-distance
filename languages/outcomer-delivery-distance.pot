@@ -1,61 +1,46 @@
 # Copyright (C) 2025 Outcomer Delivery Distance
 # This file is distributed under the same license as the Outcomer Delivery Distance package.
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Outcomer Delivery Distance\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-01-09 12:00+0000\n"
+"POT-Creation-Date: 2025-09-07 15:12+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"X-Generator: Poedit 1.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+"X-Poedit-Basepath: ../includes\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-SearchPath-0: .\n"
 
-#: includes/CheckoutHandler.php:108
-msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
-msgstr ""
-
-#: includes/CheckoutHandler.php:121
-msgid "Delivery price calculation error. Please refresh and try again."
-msgstr ""
-
-#: includes/CheckoutHandler.php:185
+#: CheckoutHandler.php:96
 msgid "Please provide a valid address for delivery calculation."
 msgstr ""
 
-#: includes/CheckoutHandler.php:197
+#: CheckoutHandler.php:108
 msgid "Unable to validate the provided address. Please check and try again."
 msgstr ""
 
-#: includes/CheckoutHandler.php:212
+#: CheckoutHandler.php:124
+#, php-format
 msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
 msgstr ""
 
-#: includes/CheckoutHandler.php:214
+#: CheckoutHandler.php:204
 msgid "Powered by"
 msgstr ""
 
-#: includes/Plugin.php:118
-msgid "Delivery Information:"
+#: ShippingCalculator.php:119 ShippingCalculator.php:146
+msgid "zone"
 msgstr ""
 
-#: includes/Plugin.php:119
-msgid "Distance:"
+#: ShippingCalculator.php:120
+msgid "unavailable"
 msgstr ""
 
-#: includes/Plugin.php:120
-msgid "Zone:"
-msgstr ""
-
-#: includes/Plugin.php:121
-msgid "Delivery cost:"
-msgstr ""
-
-#: includes/Plugin.php:122
-msgid "Delivery Error:"
-msgstr ""
-
-#: includes/Plugin.php:123
-msgid "Validating address..."
+#: ShippingCalculator.php:121 ShippingCalculator.php:148
+msgid "distance"
 msgstr ""

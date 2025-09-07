@@ -10,7 +10,6 @@ jQuery(document).ready(function ($) {
 	let selectedIndex = -1;
 	let predictions = [];
 	let activeInput = null;
-	let activeSuggestions = null;
 
 	// Wait for Google Maps to be ready before initializing
 	function initWhenReady() {
@@ -77,7 +76,6 @@ jQuery(document).ready(function ($) {
 		$(input).on('input', async function () {
 			const query = this.value;
 			activeInput = this;
-			activeSuggestions = suggestionsContainer;
 
 			// Show/hide clear button based on input value
 			if (query.length > 0) {
@@ -259,13 +257,6 @@ jQuery(document).ready(function ($) {
 
 				// Fill all address fields
 				fillAddressFieldsNew(placeData, null);
-
-				// Validate and calculate delivery cost
-				if (place.location) {
-					validateAddressFromClient(place.formattedAddress);
-				}
-
-				// Hide suggestions
 				hideSuggestions();
 			} else {
 				// Fallback to old API if somehow we don't have the new suggestion
@@ -278,9 +269,6 @@ jQuery(document).ready(function ($) {
 						activeInput.value = place.formatted_address || '';
 						$(activeInput).trigger('change');
 						fillAddressFieldsNew(place, null);
-						if (place.geometry?.location) {
-							validateAddressFromClient(place.formatted_address);
-						}
 						hideSuggestions();
 					}
 				});
@@ -339,9 +327,6 @@ jQuery(document).ready(function ($) {
 		}, (results, status) => {
 			if (status === google.maps.GeocoderStatus.OK && results.length) {
 				fillAddressFieldsNew(results[0], null);
-				if (results[0].geometry?.location) {
-					validateAddressFromClient(results[0].formatted_address);
-				}
 			}
 		});
 	}
@@ -428,88 +413,7 @@ jQuery(document).ready(function ($) {
 		}, 100);
 	};
 
-	function handleValidAddress(data) {
-		clearDeliveryMessages();
-		// Show delivery information
-		showDeliveryInfo(data);
-	}
-
-	function handleInvalidAddress(errorMessage) {
-		clearDeliveryMessages();
-		showDeliveryError(errorMessage);
-	}
-
-	function getDeliveryMessageContainer() {
-		// Always use the container in review order table
-		return $('.outcomer-delivery-messages').first();
-	}
-
-	function showDeliveryInfo(data) {
-		const container = getDeliveryMessageContainer();
-		container.removeClass('woocommerce-error')
-			.html(`
-				<strong>${outcomerDelivery.strings.deliveryInfo}</strong><br>
-				${outcomerDelivery.strings.distance} ${data.distance}km<br>
-				${outcomerDelivery.strings.zone} ${data.zone}<br>
-				${outcomerDelivery.strings.deliveryCost} ${data.price} ${outcomerDelivery.currency}
-			`).show();
-	}
-
-	function showDeliveryError(message) {
-		const container = getDeliveryMessageContainer();
-		container.addClass('woocommerce-error')
-			.html(`<strong>${outcomerDelivery.strings.deliveryError}</strong> ${message}`).show();
-	}
-
-	function showDeliveryLoading() {
-		const container = getDeliveryMessageContainer();
-		container.removeClass('woocommerce-error')
-			.html(outcomerDelivery.strings.validatingAddress).show();
-	}
-
-	function hideDeliveryLoading() {
-		const container = getDeliveryMessageContainer();
-		container.hide();
-	}
-
-	function clearDeliveryMessages() {
-		$('.outcomer-delivery-messages').hide();
-	}
-
-	window.validateAddressFromClient = function (address) {
-		if (!address) return;
-
-		// Show loading indicator
-		showDeliveryLoading();
-
-		const data = {
-			action: 'outcomer_calculate_delivery',
-			nonce: outcomerDelivery.nonce,
-			address: address
-			// Server will geocode the address itself for security
-		};
-
-		$.ajax({
-			url: outcomerDelivery.ajaxUrl,
-			type: 'POST',
-			data: data,
-			success: function (response) {
-				hideDeliveryLoading();
-
-				if (response.success) {
-					handleValidAddress(response.data);
-					// Trigger WooCommerce checkout update
-					$('body').trigger('update_checkout');
-				} else {
-					handleInvalidAddress(response.data);
-				}
-			},
-			error: function (xhr, status, error) {
-				hideDeliveryLoading();
-				console.error('Address validation error:', error);
-				showDeliveryError('Network error occurred while validating address');
-			}
-		});
-	};
+	// All delivery validation is now handled by WooCommerce's own update mechanism
+	// No need for separate AJAX calls
 
 }); // End jQuery ready

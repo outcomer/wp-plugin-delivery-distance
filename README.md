@@ -41,19 +41,38 @@ define('ODD_STORE_LAT', 50.1260);
 define('ODD_STORE_LNG', 14.4698);
 
 // Country restriction
-define('ODD_COUNTRY_RESTRICT', ['CZ']);
+define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
 
 // Shipping method IDs to apply logic
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
+
+// Distance pattern matching for shipping classes
+define('ODD_DISTANCE_MATCHERS', [
+    '/^(\d+)-(\d+)-km$/' => fn($matches) => [
+        'min' => (float) $matches[1],
+        'max' => (float) $matches[2],
+    ],
+]);
 ```
 
-## Shipping Method Setup
+## Setup
+
+### 1. Shipping Method Configuration
 
 1. Go to **WooCommerce → Settings → Shipping**
 2. Select shipping zone
 3. Find the needed shipping method and open it for editing
 4. Look at the URL parameter `instance_id` (e.g., `instance_id=2`)
 5. Add this ID to the `ODD_ENABLED_SHIPPING_INSTANCE_IDS` array
+
+### 2. Shipping Classes Setup
+
+1. Go to **WooCommerce → Settings → Shipping → Shipping Classes**
+2. Create shipping classes with distance-based slugs:
+   - Slug: `0-1-km`, Name: "Zone 1 (0-1 km)"
+   - Slug: `1-3-km`, Name: "Zone 2 (1-3 km)"  
+   - Slug: `3-6-km`, Name: "Zone 3 (3-6 km)"
+3. Configure costs for each class in your shipping method settings
 
 ## How it Works
 
@@ -65,14 +84,13 @@ define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
 4. **Calculation**: Distance from store to customer is calculated
 5. **Rate application**: Delivery cost is updated according to zone
 
-### Pricing Zones:
+### Pricing System:
 
-| Zone | Distance | Cost |
-|------|----------|------|
-| 1    | < 1 km   | 100 CZK |
-| 2    | 1-3 km   | 150 CZK |  
-| 3    | 3-6 km   | 160 CZK |
-| -    | > 6 km   | Unavailable |
+Delivery costs are now managed dynamically through WooCommerce Shipping Classes instead of hardcoded values. The system uses shipping class slugs that match distance patterns:
+
+- Create shipping classes with slugs like: `0-1-km`, `1-3-km`, `3-6-km`
+- Configure costs in WooCommerce shipping methods
+- Plugin automatically assigns appropriate shipping class based on calculated distance
 
 ## File Structure
 
@@ -84,9 +102,9 @@ outcomer-delivery-distance/
 │   ├── Plugin.php                 # Main plugin class
 │   ├── DistanceCalculator.php     # Distance calculations
 │   ├── Geocoder.php              # Google API integration
-│   ├── AjaxHandler.php           # AJAX endpoints
 │   ├── CheckoutHandler.php       # Checkout integration
-│   └── ShippingCalculator.php    # Delivery cost calculation
+│   ├── ShippingCalculator.php    # Delivery cost calculation
+│   └── ShippingChecker.php       # Shipping method validation
 ├── assets/
 │   └── js/
 │       └── checkout-autocomplete.js # Frontend JavaScript
@@ -162,7 +180,7 @@ After order creation, check metadata:
 
 - **Two-key architecture**: Separate API keys for client and server prevent misuse
 - **Server-side validation**: All coordinates are calculated on server, not trusted from client
-- **AJAX protection**: All requests protected with WordPress nonce
+- **WooCommerce integration**: Uses native WooCommerce checkout validation
 - **Data sanitization**: All input data goes through sanitization
 - **Output escaping**: All output data goes through escaping
 - **API key restrictions**: Browser key restricted by referer, server key by IP address
@@ -185,7 +203,9 @@ For technical support, create an issue in the project repository.
 - Google Places autocomplete with new AutocompleteSuggestion API
 - Server-side address validation and distance calculation
 - Two-key security architecture (browser + server keys)
+- Dynamic pricing system using WooCommerce shipping classes
 - Support for addresses in Czech Republic
-- Distance-based pricing with 3 delivery zones (max 6km)
+- Distance-based delivery zones with flexible configuration (max 6km)
 - Comprehensive localization support (Czech + English)
 - Template-based UI with search and clear icons
+- Clean architecture without AJAX dependencies

@@ -75,13 +75,7 @@ class ShippingCalculator
 
 		foreach ($rates as $rateId => $rate) {
 			if ($this->isDistanceBasedShippingRate($rate)) {
-				$updatedRate = $this->updateRateWithDistance($rate, $distance);
-				// Only update if we got a valid rate back
-				if (!is_null($updatedRate)) {
-					$rates[$rateId] = $updatedRate;
-				}
-				// If null returned (distance too far), keep the original rate
-				// This allows the method to stay visible with default price
+				$rates[$rateId] = $this->updateRateWithDistance($rate, $distance);
 			}
 		}
 
@@ -109,31 +103,59 @@ class ShippingCalculator
 	/**
 	 * Update rate with distance-based price
 	 */
-	private function updateRateWithDistance(WC_Shipping_Rate $rate, float $distance): ?WC_Shipping_Rate
+	private function updateRateWithDistance(WC_Shipping_Rate $rate, float $distance): WC_Shipping_Rate
 	{
+		// Always update label with distance info, regardless of availability
+		$originalLabel = $rate->get_label();
+
 		// Get shipping class based on distance
 		$shippingClassId = $this->distanceCalculator->getShippingClassByDistance($distance);
 
 		if (false === $shippingClassId) {
-			// Distance too far - no delivery available
-			// Remove rate from available options
-			return null;
+			// Distance too far - show unavailable message in label
+			$newLabel = sprintf(
+				'%s (%s: %s, %s: %.1fkm)',
+				$originalLabel,
+				__('zone', 'outcomer-delivery-distance'),
+				__('unavailable', 'outcomer-delivery-distance'),
+				__('distance', 'outcomer-delivery-distance'),
+				$distance
+			);
+			$rate->set_label($newLabel);
+
+			// Add meta data for debugging
+			$rate->add_meta_data('_outcomer_distance', $distance);
+			$rate->add_meta_data('_outcomer_available', false);
+
+			return $rate;
 		}
 
 		// Get price for this shipping class
 		$calculatedPrice = $this->distanceCalculator->getPriceByDistance($distance);
 
-		if (false === $calculatedPrice) {
-			return null;
+		if (false !== $calculatedPrice) {
+			// Update rate cost only if we have valid price
+			$rate->set_cost($calculatedPrice);
 		}
 
-		// Update rate cost
-		$rate->set_cost($calculatedPrice);
+		// Update rate label to include distance and zone info
+		$zone     = $this->distanceCalculator->getDeliveryZone($distance);
+		$newLabel = sprintf(
+			'%s (%s: %s, %s: %.1fkm)',
+			$originalLabel,
+			__('zone', 'outcomer-delivery-distance'),
+			$zone,
+			__('distance', 'outcomer-delivery-distance'),
+			$distance
+		);
+		$rate->set_label($newLabel);
 
 		// Add meta data for debugging
 		$rate->add_meta_data('_outcomer_distance', $distance);
 		$rate->add_meta_data('_outcomer_shipping_class_id', $shippingClassId);
 		$rate->add_meta_data('_outcomer_calculated_price', $calculatedPrice);
+		$rate->add_meta_data('_outcomer_zone', $zone);
+		$rate->add_meta_data('_outcomer_available', true);
 
 		return $rate;
 	}

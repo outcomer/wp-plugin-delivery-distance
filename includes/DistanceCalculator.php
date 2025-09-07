@@ -136,13 +136,19 @@ class DistanceCalculator
 	 */
 	private function loadShippingClassesAndCosts(): void
 	{
-		// Get shipping classes
-		$terms = get_terms([
-			'taxonomy'   => 'product_shipping_class',
-			'hide_empty' => false,
-		]);
+		global $wpdb;
 
-		if (!is_wp_error($terms)) {
+		// Direct SQL query to bypass language filters
+		$sql = "
+			SELECT t.term_id, t.name, t.slug 
+			FROM {$wpdb->terms} t
+			INNER JOIN {$wpdb->term_taxonomy} tt ON t.term_id = tt.term_id
+			WHERE tt.taxonomy = 'product_shipping_class'
+		";
+
+		$terms = $wpdb->get_results($sql);
+
+		if ($terms) {
 			foreach ($terms as $term) {
 				$this->shippingClasses[$term->term_id] = [ // phpcs:ignore Zend.NamingConventions.ValidVariableName.NotCamelCaps
 					'slug' => $term->slug,

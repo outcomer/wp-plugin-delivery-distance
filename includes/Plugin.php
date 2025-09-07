@@ -24,7 +24,6 @@ class Plugin
 {
 	private DistanceCalculator $distanceCalculator;
 	private Geocoder $geocoder;
-	private AjaxHandler $ajaxHandler;
 	private CheckoutHandler $checkoutHandler;
 	private ShippingCalculator $shippingCalculator;
 
@@ -35,7 +34,6 @@ class Plugin
 	{
 		$this->distanceCalculator = new DistanceCalculator();
 		$this->geocoder           = new Geocoder();
-		$this->ajaxHandler        = new AjaxHandler($this->geocoder, $this->distanceCalculator);
 		$this->checkoutHandler    = new CheckoutHandler($this->geocoder, $this->distanceCalculator);
 		$this->shippingCalculator = new ShippingCalculator($this->distanceCalculator);
 	}
@@ -45,7 +43,6 @@ class Plugin
 	 */
 	public function init(): void
 	{
-		$this->ajaxHandler->init();
 		$this->checkoutHandler->init();
 		$this->shippingCalculator->init();
 
@@ -114,14 +111,6 @@ class Plugin
 			'apiKey'          => ODD_GOOGLE_API_KEY_BROWSER,
 			'countryRestrict' => array_keys(ODD_COUNTRY_RESTRICT),
 			'currency'        => get_woocommerce_currency(),
-			'strings'         => [
-				'deliveryInfo'      => __('Delivery Information:', 'outcomer-delivery-distance'),
-				'distance'          => __('Distance:', 'outcomer-delivery-distance'),
-				'zone'              => __('Zone:', 'outcomer-delivery-distance'),
-				'deliveryCost'      => __('Delivery cost:', 'outcomer-delivery-distance'),
-				'deliveryError'     => __('Delivery Error:', 'outcomer-delivery-distance'),
-				'validatingAddress' => __('Validating address...', 'outcomer-delivery-distance'),
-			],
 		]);
 	}
 }

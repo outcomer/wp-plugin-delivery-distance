@@ -45,8 +45,6 @@ class CheckoutHandler
 		add_filter('woocommerce_checkout_fields', [$this, 'modifyCheckoutFields'], 1010);
 		add_action('woocommerce_after_checkout_validation', [$this, 'validateCheckoutAddress'], 10, 2);
 		add_action('woocommerce_checkout_create_order', [$this, 'saveDeliveryData'], 10, 2);
-		add_action('woocommerce_checkout_process', [$this, 'processDeliveryData']);
-		add_action('woocommerce_review_order_before_shipping', [$this, 'addDeliveryMessageContainer']);
 		add_action('woocommerce_before_checkout_form', [$this, 'addAutocompleteTemplates']);
 	}
 
@@ -159,33 +157,6 @@ class CheckoutHandler
 			$order->update_meta_data('_outcomer_delivery_zone', sanitize_text_field((string) $deliveryZone));
 			$order->update_meta_data('_outcomer_delivery_calculated', current_time('mysql'));
 		}
-	}
-
-	/**
-	 * Process delivery data during checkout
-	 */
-	public function processDeliveryData(): void
-	{
-		if (!ShippingChecker::isDistanceBasedShippingSelected()) {
-			return;
-		}
-
-		// Additional processing if needed
-		// For example, logging, external API calls, etc.
-	}
-
-	/**
-	 * Add delivery message container in review order section
-	 */
-	public function addDeliveryMessageContainer(): void
-	{
-		?>
-		<tr class="outcomer-delivery-info">
-			<td colspan="2">
-				<div class="woocommerce-info outcomer-delivery-messages" style="display: none; margin: 10px 0;"></div>
-			</td>
-		</tr>
-		<?php
 	}
 
 	/**
