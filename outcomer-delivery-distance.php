@@ -1,4 +1,5 @@
-<?php
+<?php // phpcs:ignore Symfony.Files.AlphanumericFilename.Invalid
+
 /**
  * Plugin Name: Outcomer Delivery Distance
  * Plugin URI: https://outcomer.com
@@ -23,10 +24,11 @@ define('ODD_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ODD_VERSION', '1.0.0');
 
 // Configuration constants
-define('ODD_GOOGLE_API_KEY', 'AIzaSyA-gpgh1bFH3RM0277dI38fNDWDkvY8F7M');
+define('ODD_GOOGLE_API_KEY_BROWSER', 'AIzaSyA-gpgh1bFH3RM0277dI38fNDWDkvY8F7M'); // For JavaScript (with referer restrictions)
+define('ODD_GOOGLE_API_KEY_SERVER', 'AIzaSyAORIoCDvv68t94l3hqhUfv91BoEBd8RvI'); // For server-side Geocoding (with IP restrictions)
 define('ODD_STORE_LAT', 50.0707499);
 define('ODD_STORE_LNG', 14.4583567);
-define('ODD_COUNTRY_RESTRICT', ['CZ']);
+define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
 
 // Distance pricing tiers (in km => price in CZK)
@@ -45,7 +47,7 @@ function loadOutcomerDeliveryTextdomain(): void
 	load_plugin_textdomain(
 		'outcomer-delivery-distance',
 		false,
-		dirname(plugin_basename(__FILE__)) . '/languages'
+		dirname(plugin_basename(__FILE__)).'/languages'
 	);
 }
 

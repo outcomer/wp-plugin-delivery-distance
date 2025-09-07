@@ -72,7 +72,7 @@ class AjaxHandler
 	}
 
 	/**
-	 * Calculate delivery cost from coordinates
+	 * Calculate delivery cost from address
 	 */
 	public function calculateDeliveryFromCoordinates(): void
 	{
@@ -80,16 +80,29 @@ class AjaxHandler
 			wp_die('Security check failed', 'Error', ['response' => 403]);
 		}
 
-		$address = sanitize_text_field($_POST['address'] ?? '');
-		$lat     = floatval($_POST['lat'] ?? 0);
-		$lng     = floatval($_POST['lng'] ?? 0);
-
-		if (empty($address) || !$lat || !$lng) {
-			wp_send_json_error('Address and coordinates are required');
+		// Check if distance-based shipping is selected
+		if (!$this->isDistanceBasedShippingSelected()) {
+			wp_send_json_error('Distance calculation not needed for selected shipping method');
 		}
 
-		// Calculate distance and delivery cost
-		$distance = $this->distanceCalculator->calculateDistanceFromStore($lat, $lng);
+		$address = sanitize_text_field($_POST['address'] ?? '');
+
+		if (empty($address)) {
+			wp_send_json_error('Address is required');
+		}
+
+		// Server-side geocoding for security
+		$locationData = $this->geocoder->geocodeAddress($address);
+
+		if (!$locationData) {
+			wp_send_json_error('Unable to geocode the provided address');
+		}
+
+		// Calculate distance and delivery cost using server-geocoded coordinates
+		$distance = $this->distanceCalculator->calculateDistanceFromStore(
+			$locationData['lat'],
+			$locationData['lng']
+		);
 		$price    = $this->distanceCalculator->getPriceByDistance($distance);
 		$zone     = $this->distanceCalculator->getDeliveryZone($distance);
 
@@ -98,14 +111,9 @@ class AjaxHandler
 		}
 
 		wp_send_json_success([
-			'distance'          => round($distance, 2),
-			'price'             => $price,
-			'zone'              => $zone,
-			'coordinates'       => [
-				'lat' => $lat,
-				'lng' => $lng,
-			],
-			'formatted_address' => $address,
+			'distance' => round($distance, 2),
+			'price'    => $price,
+			'zone'     => $zone,
 		]);
 	}
 
@@ -123,9 +131,9 @@ class AjaxHandler
 
 		$url = add_query_arg([
 			'input'      => urlencode($input),
-			'key'        => ODD_GOOGLE_API_KEY,
+			'key'        => ODD_GOOGLE_API_KEY_BROWSER,
 			'types'      => 'address',
-			'components' => 'country:'.implode('|country:', ODD_COUNTRY_RESTRICT),
+			'components' => 'country:'.implode('|country:', array_keys(ODD_COUNTRY_RESTRICT)),
 			'language'   => get_locale(),
 		], 'https://maps.googleapis.com/maps/api/place/autocomplete/json');
 
@@ -170,5 +178,30 @@ class AjaxHandler
 	private function verifyNonce(): bool
 	{
 		return (bool) wp_verify_nonce($_POST['nonce'] ?? '', 'outcomer_delivery_nonce');
+	}
+
+	/**
+	 * Check if distance-based shipping method is selected
+	 */
+	private function isDistanceBasedShippingSelected(): bool
+	{
+		$chosenMethods = WC()->session->get('chosen_shipping_methods');
+
+		if (empty($chosenMethods)) {
+			return false;
+		}
+
+		foreach ($chosenMethods as $method) {
+			// Extract instance ID from method (e.g., "flat_rate:2" -> "2")
+			$parts = explode(':', $method);
+			if (count($parts) >= 2) {
+				$instanceId = (int) $parts[1];
+				if (in_array($instanceId, ODD_ENABLED_SHIPPING_INSTANCE_IDS)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }

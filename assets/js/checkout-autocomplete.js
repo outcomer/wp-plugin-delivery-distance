@@ -262,9 +262,7 @@ jQuery(document).ready(function ($) {
 
 				// Validate and calculate delivery cost
 				if (place.location) {
-					const lat = place.location.lat();
-					const lng = place.location.lng();
-					validateAddressWithCoordinates(place.formattedAddress, lat, lng);
+					validateAddressFromClient(place.formattedAddress);
 				}
 
 				// Hide suggestions
@@ -281,9 +279,7 @@ jQuery(document).ready(function ($) {
 						$(activeInput).trigger('change');
 						fillAddressFieldsNew(place, null);
 						if (place.geometry?.location) {
-							const lat = place.geometry.location.lat();
-							const lng = place.geometry.location.lng();
-							validateAddressWithCoordinates(place.formatted_address, lat, lng);
+							validateAddressFromClient(place.formatted_address);
 						}
 						hideSuggestions();
 					}
@@ -344,9 +340,7 @@ jQuery(document).ready(function ($) {
 			if (status === google.maps.GeocoderStatus.OK && results.length) {
 				fillAddressFieldsNew(results[0], null);
 				if (results[0].geometry?.location) {
-					const lat = results[0].geometry.location.lat();
-					const lng = results[0].geometry.location.lng();
-					validateAddressWithCoordinates(results[0].formatted_address, lat, lng);
+					validateAddressFromClient(results[0].formatted_address);
 				}
 			}
 		});
@@ -450,20 +444,9 @@ jQuery(document).ready(function ($) {
 	}
 
 	function storeDeliveryData(data) {
-		// Store in hidden fields for checkout processing
-		let hiddenContainer = $('#outcomer-delivery-data');
-		if (hiddenContainer.length === 0) {
-			hiddenContainer = $('<div id="outcomer-delivery-data" style="display:none;"></div>');
-			$('.checkout.woocommerce-checkout').append(hiddenContainer);
-		}
-
-		hiddenContainer.html(`
-			<input type="hidden" name="outcomer_delivery_lat" value="${data.coordinates.lat}">
-			<input type="hidden" name="outcomer_delivery_lng" value="${data.coordinates.lng}">
-			<input type="hidden" name="outcomer_delivery_distance" value="${data.distance}">
-			<input type="hidden" name="outcomer_delivery_zone" value="${data.zone}">
-			<input type="hidden" name="outcomer_delivery_price" value="${data.price}">
-		`);
+		// Server will calculate coordinates and distance from address
+		// Only store UI display data for user feedback
+		window.outcomerDeliveryData = data;
 	}
 
 	function getDeliveryMessageContainer() {
@@ -516,8 +499,8 @@ jQuery(document).ready(function ($) {
 		$('.outcomer-delivery-messages').hide();
 	}
 
-	window.validateAddressWithCoordinates = function (address, lat, lng) {
-		if (!address || !lat || !lng) return;
+	window.validateAddressFromClient = function (address) {
+		if (!address) return;
 
 		// Show loading indicator
 		showDeliveryLoading();
@@ -525,9 +508,8 @@ jQuery(document).ready(function ($) {
 		const data = {
 			action: 'outcomer_calculate_delivery',
 			nonce: outcomerDelivery.nonce,
-			address: address,
-			lat: lat,
-			lng: lng
+			address: address
+			// Server will geocode the address itself for security
 		};
 
 		$.ajax({

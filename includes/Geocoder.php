@@ -30,7 +30,7 @@ class Geocoder
 	 */
 	public function __construct()
 	{
-		$this->apiKey = ODD_GOOGLE_API_KEY;
+		$this->apiKey = ODD_GOOGLE_API_KEY_SERVER;
 	}
 
 	/**

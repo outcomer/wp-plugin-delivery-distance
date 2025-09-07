@@ -65,7 +65,7 @@ class Plugin
 		// Updated to use v=beta for new Places API features
 		wp_enqueue_script(
 			'google-maps',
-			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY.'&libraries=places&v=beta&loading=async&callback=initGoogleMapsCallback',
+			'https://maps.googleapis.com/maps/api/js?key='.ODD_GOOGLE_API_KEY_BROWSER.'&libraries=places&v=beta&loading=async&callback=initGoogleMapsCallback',
 			[],
 			null,
 			true
@@ -111,8 +111,8 @@ class Plugin
 		wp_localize_script('outcomer-checkout-autocomplete', 'outcomerDelivery', [
 			'ajaxUrl'         => admin_url('admin-ajax.php'),
 			'nonce'           => wp_create_nonce('outcomer_delivery_nonce'),
-			'apiKey'          => ODD_GOOGLE_API_KEY,
-			'countryRestrict' => ODD_COUNTRY_RESTRICT,
+			'apiKey'          => ODD_GOOGLE_API_KEY_BROWSER,
+			'countryRestrict' => array_keys(ODD_COUNTRY_RESTRICT),
 			'currency'        => get_woocommerce_currency(),
 			'strings'         => [
 				'deliveryInfo'      => __('Delivery Information:', 'outcomer-delivery-distance'),

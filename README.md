@@ -17,10 +17,9 @@ WooCommerce plugin for automatic address input with Google Places API and delive
 - WordPress ≥ 6.4
 - WooCommerce ≥ 10.0
 - PHP ≥ 8.2
-- Google API key with activated services:
-  - Places API
-  - Geocoding API
-  - Maps JavaScript API
+- Two Google API keys with activated services:
+  - **Browser key**: Places API (New), Maps JavaScript API
+  - **Server key**: Geocoding API, Places API
 
 ## Installation
 
@@ -33,8 +32,9 @@ WooCommerce plugin for automatic address input with Google Places API and delive
 All settings are located in the `outcomer-delivery-distance.php` file:
 
 ```php
-// Google API key
-define('ODD_GOOGLE_API_KEY', 'your_key_here');
+// Google API keys
+define('ODD_GOOGLE_API_KEY_BROWSER', 'your_browser_key_here'); // With referer restrictions
+define('ODD_GOOGLE_API_KEY_SERVER', 'your_server_key_here');   // With IP restrictions
 
 // Store coordinates (Prague)
 define('ODD_STORE_LAT', 50.1260);
@@ -131,17 +131,34 @@ After order creation, check metadata:
 
 ## Troubleshooting
 
+### Google API Key Setup
+
+**Browser Key (for frontend autocomplete):**
+1. Create API key in Google Cloud Console
+2. Set Application restrictions: HTTP referrers
+3. Add your domain: `yourdomain.com/*`, `*.yourdomain.com/*`
+4. Set API restrictions: Places API (New), Maps JavaScript API
+
+**Server Key (for backend validation):**
+1. Create separate API key in Google Cloud Console
+2. Set Application restrictions: IP addresses
+3. Add your server IP address
+4. Set API restrictions: Geocoding API, Places API
+
 ### Autocomplete Not Working
 
-1. Check that Google API key is correct and active
-2. Make sure Places API and Maps JavaScript API are enabled
-3. Check browser console for JavaScript errors
+1. Check that browser API key is correct and active
+2. Make sure Places API (New) and Maps JavaScript API are enabled
+3. Verify referer restrictions include your domain
+4. Check browser console for JavaScript errors
 
 ### Address Validation Not Working
 
-1. Check that Geocoding API is enabled
-2. Make sure API limits are not exceeded
-3. Check WordPress logs for API errors
+1. Check that server API key is correct and active
+2. Make sure Geocoding API and Places API are enabled
+3. Verify IP restrictions include your server IP
+4. Make sure API limits are not exceeded
+5. Check WordPress logs for API errors
 
 ### Delivery Cost Not Updating
 
@@ -151,10 +168,12 @@ After order creation, check metadata:
 
 ## Security
 
-- All AJAX requests are protected with WordPress nonce
-- Input data goes through sanitization
-- Output data goes through escaping
-- API key is passed only in controlled places
+- **Two-key architecture**: Separate API keys for client and server prevent misuse
+- **Server-side validation**: All coordinates are calculated on server, not trusted from client
+- **AJAX protection**: All requests protected with WordPress nonce
+- **Data sanitization**: All input data goes through sanitization
+- **Output escaping**: All output data goes through escaping
+- **API key restrictions**: Browser key restricted by referer, server key by IP address
 
 ## Performance
 
@@ -171,6 +190,10 @@ For technical support, create an issue in the project repository.
 
 ### 1.0.0
 - First release
-- Basic autocomplete and delivery calculation functionality
-- Support only for addresses in Czech Republic
-- Pricing zones 1-3 with 6km limitation
+- Google Places autocomplete with new AutocompleteSuggestion API
+- Server-side address validation and distance calculation
+- Two-key security architecture (browser + server keys)
+- Support for addresses in Czech Republic
+- Distance-based pricing with 3 delivery zones (max 6km)
+- Comprehensive localization support (Czech + English)
+- Template-based UI with search and clear icons

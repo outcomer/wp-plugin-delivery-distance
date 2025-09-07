@@ -84,43 +84,56 @@ class CheckoutHandler
 	 */
 	public function validateCheckoutAddress(array $data, WP_Error $errors): void
 	{
-		// Get delivery data from hidden fields
-		$deliveryLat      = $_POST['outcomer_delivery_lat'] ?? null;
-		$deliveryLng      = $_POST['outcomer_delivery_lng'] ?? null;
-		$deliveryDistance = $_POST['outcomer_delivery_distance'] ?? null;
-		$deliveryPrice    = $_POST['outcomer_delivery_price'] ?? null;
-
-		// Check if we have delivery data (means JavaScript validation passed)
-		if (!$deliveryLat || !$deliveryLng) {
-			// Fallback: validate address manually
-			$this->fallbackAddressValidation($data, $errors);
-
-			return;
-		}
-
-		// Validate delivery data
-		$distance = (float) $deliveryDistance;
-		$price    = $this->distanceCalculator->getPriceByDistance($distance);
-
-		if (false === $price) {
-			$errors->add(
-				'delivery_unavailable',
-				sprintf(__('Delivery is not available for this address. Distance: %.2fkm (max 6km)', 'outcomer-delivery-distance'), $distance)
-			);
-		}
-
 		// Check if selected shipping method requires distance validation
 		if (!$this->isDistanceBasedShippingSelected()) {
 			return; // Skip validation if distance-based shipping is not selected
 		}
 
-		// Validate that calculated price matches expected
-		if ((int) $deliveryPrice !== $price) {
+		// Always validate address on server side for security
+		$address = $this->buildAddressString($data);
+
+		if (empty($address)) {
 			$errors->add(
-				'delivery_price_mismatch',
-				__('Delivery price calculation error. Please refresh and try again.', 'outcomer-delivery-distance')
+				'address_required',
+				__('Please provide a valid address for delivery calculation.', 'outcomer-delivery-distance')
 			);
+
+			return;
 		}
+
+		// Server-side geocoding and distance calculation
+		$locationData = $this->geocoder->geocodeAddress($address);
+
+		if (!$locationData) {
+			$errors->add(
+				'address_invalid',
+				__('Unable to validate the provided address. Please check and try again.', 'outcomer-delivery-distance')
+			);
+
+			return;
+		}
+
+		// Calculate distance on server
+		$distance = $this->distanceCalculator->calculateDistanceFromStore(
+			$locationData['lat'],
+			$locationData['lng']
+		);
+
+		// Check if delivery is available
+		if (!$this->distanceCalculator->isWithinDeliveryRange($distance)) {
+			$errors->add(
+				'delivery_unavailable',
+				sprintf(__('Delivery is not available for this address. Distance: %.2fkm (max 6km)', 'outcomer-delivery-distance'), $distance)
+			);
+
+			return;
+		}
+
+		// Store server-calculated data for order saving
+		$_POST['_server_delivery_lat']      = $locationData['lat'];
+		$_POST['_server_delivery_lng']      = $locationData['lng'];
+		$_POST['_server_delivery_distance'] = $distance;
+		$_POST['_server_delivery_zone']     = $this->distanceCalculator->getDeliveryZone($distance);
 	}
 
 	/**
@@ -128,16 +141,22 @@ class CheckoutHandler
 	 */
 	public function saveDeliveryData(WC_Order $order, array $data): void
 	{
-		$deliveryLat      = $_POST['outcomer_delivery_lat'] ?? null;
-		$deliveryLng      = $_POST['outcomer_delivery_lng'] ?? null;
-		$deliveryDistance = $_POST['outcomer_delivery_distance'] ?? null;
-		$deliveryZone     = $_POST['outcomer_delivery_zone'] ?? null;
+		// Only save delivery data if distance-based shipping is selected
+		if (!$this->isDistanceBasedShippingSelected()) {
+			return;
+		}
+
+		// Use server-calculated data for security
+		$deliveryLat      = $_POST['_server_delivery_lat'] ?? null;
+		$deliveryLng      = $_POST['_server_delivery_lng'] ?? null;
+		$deliveryDistance = $_POST['_server_delivery_distance'] ?? null;
+		$deliveryZone     = $_POST['_server_delivery_zone'] ?? null;
 
 		if ($deliveryLat && $deliveryLng) {
-			$order->update_meta_data('_outcomer_delivery_lat', sanitize_text_field($deliveryLat));
-			$order->update_meta_data('_outcomer_delivery_lng', sanitize_text_field($deliveryLng));
-			$order->update_meta_data('_outcomer_delivery_distance', sanitize_text_field($deliveryDistance));
-			$order->update_meta_data('_outcomer_delivery_zone', sanitize_text_field($deliveryZone));
+			$order->update_meta_data('_outcomer_delivery_lat', sanitize_text_field((string) $deliveryLat));
+			$order->update_meta_data('_outcomer_delivery_lng', sanitize_text_field((string) $deliveryLng));
+			$order->update_meta_data('_outcomer_delivery_distance', sanitize_text_field((string) $deliveryDistance));
+			$order->update_meta_data('_outcomer_delivery_zone', sanitize_text_field((string) $deliveryZone));
 			$order->update_meta_data('_outcomer_delivery_calculated', current_time('mysql'));
 		}
 	}
@@ -222,52 +241,6 @@ class CheckoutHandler
 	}
 
 	/**
-	 * Fallback validation when JavaScript data is not available
-	 */
-	private function fallbackAddressValidation(array $data, WP_Error $errors): void
-	{
-		if (!$this->isDistanceBasedShippingSelected()) {
-			return;
-		}
-
-		$address = $this->buildAddressString($data);
-
-		if (empty($address)) {
-			$errors->add(
-				'address_required',
-				__('Please provide a valid address for delivery calculation.', 'outcomer-delivery-distance')
-			);
-
-			return;
-		}
-
-		// Validate address with geocoder
-		$locationData = $this->geocoder->geocodeAddress($address);
-
-		if (!$locationData) {
-			$errors->add(
-				'address_invalid',
-				__('Unable to validate the provided address. Please check and try again.', 'outcomer-delivery-distance')
-			);
-
-			return;
-		}
-
-		// Calculate distance
-		$distance = $this->distanceCalculator->calculateDistanceFromStore(
-			$locationData['lat'],
-			$locationData['lng']
-		);
-
-		if (!$this->distanceCalculator->isWithinDeliveryRange($distance)) {
-			$errors->add(
-				'delivery_unavailable_fallback',
-				sprintf(__('Delivery is not available for this address. Distance: %.2fkm (max 6km)', 'outcomer-delivery-distance'), $distance)
-			);
-		}
-	}
-
-	/**
 	 * Check if distance-based shipping method is selected
 	 */
 	private function isDistanceBasedShippingSelected(): bool
@@ -312,7 +285,11 @@ class CheckoutHandler
 			$addressParts[] = $data['billing_postcode'] ?? '';
 		}
 
-		$addressParts[] = 'Czech Republic'; // Force country
+		// Add country from settings
+		$countries = ODD_COUNTRY_RESTRICT;
+		if (!empty($countries)) {
+			$addressParts[] = reset($countries); // Берем первое значение (название страны)
+		}
 
 		return trim(implode(', ', array_filter($addressParts)));
 	}
