@@ -216,12 +216,6 @@ class ShippingCalculator
 			$addressParts[] = $destination['postcode'];
 		}
 
-		// Add country from settings
-		$countries = ODD_COUNTRY_RESTRICT;
-		if (!empty($countries)) {
-			$addressParts[] = reset($countries);
-		}
-
 		return trim(implode(', ', array_filter($addressParts)));
 	}
 }

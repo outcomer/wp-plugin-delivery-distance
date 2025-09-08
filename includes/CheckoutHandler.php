@@ -232,12 +232,6 @@ class CheckoutHandler
 			$addressParts[] = $data['billing_postcode'] ?? '';
 		}
 
-		// Add country from settings
-		$countries = ODD_COUNTRY_RESTRICT;
-		if (!empty($countries)) {
-			$addressParts[] = reset($countries); // Берем первое значение (название страны)
-		}
-
 		return trim(implode(', ', array_filter($addressParts)));
 	}
 }
