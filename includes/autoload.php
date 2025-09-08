@@ -25,9 +25,12 @@ spl_autoload_register(function ($class) {
 
 	// Remove namespace from class name
 	$className = str_replace($namespace, '', $class);
+	
+	// Replace namespace separators with directory separators
+	$className = str_replace('\\', DIRECTORY_SEPARATOR, $className);
 
 	// Convert class name to file path
-	$file = ODD_PLUGIN_DIR.'includes/'.$className.'.php';
+	$file = ODD_PLUGIN_DIR.'includes'.DIRECTORY_SEPARATOR.$className.'.php';
 
 	// Load the class file if it exists
 	if (file_exists($file)) {
