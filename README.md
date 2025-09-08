@@ -103,11 +103,16 @@ outcomer-delivery-distance/
 │   ├── DistanceCalculator.php     # Distance calculations
 │   ├── Geocoder.php              # Google API integration
 │   ├── CheckoutHandler.php       # Checkout integration
-│   ├── ShippingCalculator.php    # Delivery cost calculation
-│   └── ShippingChecker.php       # Shipping method validation
+│   └── shipping/                  # Shipping logic (refactored)
+│       ├── ShippingCalculator.php      # Main shipping coordinator
+│       ├── ShippingValidator.php       # Address validation
+│       ├── ShippingMethodSelector.php  # Method selection logic
+│       └── FragmentUpdater.php         # Checkout UI updates
 ├── assets/
-│   └── js/
-│       └── checkout-autocomplete.js # Frontend JavaScript
+│   ├── js/
+│   │   └── checkout-autocomplete.js # Frontend JavaScript
+│   └── css/
+│       └── checkout-autocomplete.css # Styling
 ├── PRD.md                         # Technical specification
 ├── IMPLEMENTATION_PLAN.md         # Development plan
 └── README.md                      # This documentation
@@ -196,7 +201,44 @@ After order creation, check metadata:
 
 For technical support, create an issue in the project repository.
 
+## Architecture
+
+### Clean Code Refactoring
+
+The plugin follows SOLID principles with separated responsibilities:
+
+#### Shipping Components:
+- **`ShippingCalculator`** - Main coordinator that orchestrates all shipping logic
+- **`ShippingValidator`** - Validates address availability and distance constraints
+- **`ShippingMethodSelector`** - Manages shipping method selection and fallbacks
+- **`FragmentUpdater`** - Forces checkout UI updates when needed
+
+#### Key Benefits:
+- ✅ **Single Responsibility**: Each class has one clear purpose
+- ✅ **Easy Testing**: Components can be tested independently
+- ✅ **Maintainability**: Changes are isolated to specific concerns
+- ✅ **Extensibility**: New features can be added without modifying existing code
+
+### Advanced Features
+
+#### Smart Method Selection
+- Automatic fallback to default shipping when distance-based delivery unavailable
+- Real-time validation prevents selecting impossible delivery methods
+- Seamless UI updates without page refreshes
+
+#### Address Input Enhancement
+- Auto-clear city/postcode fields when typing new address
+- Intelligent address component parsing (street number, premise, route)
+- Support for complex Czech addressing (premise/street number combinations)
+
 ## Changelog
+
+### 1.1.0 (Latest)
+- **Refactored Architecture**: Complete code restructuring following SOLID principles
+- **Enhanced UI**: Smart form field clearing and better address parsing
+- **Improved Reliability**: Better handling of shipping method validation edge cases
+- **Performance**: Optimized fragment updates and DOM manipulation
+- **Maintainability**: Clean separation of concerns across multiple specialized classes
 
 ### 1.0.0
 - First release

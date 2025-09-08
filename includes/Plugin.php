@@ -13,6 +13,11 @@ declare(strict_types = 1);
 
 namespace OutcomerDelivery;
 
+use OutcomerDelivery\shipping\ShippingValidator;
+use OutcomerDelivery\shipping\ShippingMethodSelector;
+use OutcomerDelivery\shipping\FragmentUpdater;
+use OutcomerDelivery\shipping\ShippingCalculator;
+
 if (!defined('ABSPATH')) {
 	exit;
 }
@@ -25,7 +30,7 @@ class Plugin
 	private DistanceCalculator $distanceCalculator;
 	private Geocoder $geocoder;
 	private CheckoutHandler $checkoutHandler;
-	private ShippingCalculator $shippingCalculator;
+	private $shippingCalculator;
 
 	/**
 	 * Constructor.
@@ -35,7 +40,18 @@ class Plugin
 		$this->distanceCalculator = new DistanceCalculator();
 		$this->geocoder           = new Geocoder();
 		$this->checkoutHandler    = new CheckoutHandler($this->geocoder, $this->distanceCalculator);
-		$this->shippingCalculator = new ShippingCalculator($this->distanceCalculator);
+
+		// Initialize refactored shipping components
+		$validator       = new ShippingValidator($this->distanceCalculator);
+		$methodSelector  = new ShippingMethodSelector($validator);
+		$fragmentUpdater = new FragmentUpdater();
+
+		$this->shippingCalculator = new ShippingCalculator(
+			$this->distanceCalculator,
+			$validator,
+			$methodSelector,
+			$fragmentUpdater
+		);
 	}
 
 	/**
