@@ -173,9 +173,10 @@ class ShippingCalculator
 
 			case 'distance_too_far':
 				$newLabel = sprintf(
-					'%s (%s, %s: %.1fkm)',
+					'%s (%s: %s, %s: %.1fkm)',
 					$originalLabel,
-					__('zone: Unavailable', 'outcomer-delivery-distance'),
+					__('zone', 'outcomer-delivery-distance'),
+					__('unavailable', 'outcomer-delivery-distance'),
 					__('distance', 'outcomer-delivery-distance'),
 					$distance ?? 0
 				);

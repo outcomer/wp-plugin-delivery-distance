@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Outcomer Delivery Distance\n"
-"POT-Creation-Date: 2025-09-07 15:12+0200\n"
-"PO-Revision-Date: 2025-09-07 15:18+0200\n"
+"POT-Creation-Date: 2025-09-08 14:52+0200\n"
+"PO-Revision-Date: 2025-09-08 14:53+0200\n"
 "Last-Translator: Auto Generated\n"
 "Language-Team: English (United States)\n"
 "Language: en_US\n"
@@ -32,14 +32,22 @@ msgstr "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
 msgid "Powered by"
 msgstr "Powered by"
 
-#: ShippingCalculator.php:119 ShippingCalculator.php:146
+#: shipping/ShippingCalculator.php:133 shipping/ShippingCalculator.php:178
 msgid "zone"
 msgstr "zone"
 
-#: ShippingCalculator.php:120
-msgid "unavailable"
-msgstr "unavailable"
-
-#: ShippingCalculator.php:121 ShippingCalculator.php:148
+#: shipping/ShippingCalculator.php:135 shipping/ShippingCalculator.php:180
 msgid "distance"
 msgstr "distance"
+
+#: shipping/ShippingCalculator.php:162
+msgid "No address provided"
+msgstr "No address provided"
+
+#: shipping/ShippingCalculator.php:170
+msgid "Address validation failed"
+msgstr "Address validation failed"
+
+#: shipping/ShippingCalculator.php:179
+msgid "unavailable"
+msgstr "unavailable"

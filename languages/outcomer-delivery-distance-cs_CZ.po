@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Outcomer Delivery Distance\n"
-"POT-Creation-Date: 2025-09-07 15:12+0200\n"
-"PO-Revision-Date: 2025-09-07 15:18+0200\n"
+"POT-Creation-Date: 2025-09-08 14:52+0200\n"
+"PO-Revision-Date: 2025-09-08 14:53+0200\n"
 "Last-Translator: Auto Generated\n"
 "Language-Team: Czech\n"
 "Language: cs_CZ\n"
@@ -32,14 +32,22 @@ msgstr "Doručení na tuto adresu není k dispozici. Vzdálenost: %.2fkm (max 6k
 msgid "Powered by"
 msgstr "Používá"
 
-#: ShippingCalculator.php:119 ShippingCalculator.php:146
+#: shipping/ShippingCalculator.php:133 shipping/ShippingCalculator.php:178
 msgid "zone"
 msgstr "zóna"
 
-#: ShippingCalculator.php:120
-msgid "unavailable"
-msgstr "nedostupné"
-
-#: ShippingCalculator.php:121 ShippingCalculator.php:148
+#: shipping/ShippingCalculator.php:135 shipping/ShippingCalculator.php:180
 msgid "distance"
 msgstr "vzdálenost"
+
+#: shipping/ShippingCalculator.php:162
+msgid "No address provided"
+msgstr "Nebyla poskytnuta žádná adresa"
+
+#: shipping/ShippingCalculator.php:170
+msgid "Address validation failed"
+msgstr "Ověření adresy se nezdařilo"
+
+#: shipping/ShippingCalculator.php:179
+msgid "unavailable"
+msgstr "nedostupné"
