@@ -197,3 +197,9 @@
 .woocommerce-checkout #shipping_method label .woocommerce-Price-amount {
 	margin-left: auto;
 }
+
+/* Theme override */
+.woocommerce-shipping-totals .custom-input input[type=radio]+label:after {
+	margin-top: auto;
+	top: 0;
+}

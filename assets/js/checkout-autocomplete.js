@@ -77,6 +77,14 @@ jQuery(document).ready(function ($) {
 			const query = this.value;
 			activeInput = this;
 
+			// Clear related fields when user starts typing in address field
+			const inputId = this.id;
+			if (inputId === 'billing_address_1' || inputId === 'shipping_address_1') {
+				const prefix = inputId.includes('billing') ? 'billing' : 'shipping';
+				$(`#${prefix}_city`).val('');
+				$(`#${prefix}_postcode`).val('');
+			}
+
 			// Show/hide clear button based on input value
 			if (query.length > 0) {
 				clearButton.style.display = 'block';
@@ -348,19 +356,23 @@ jQuery(document).ready(function ($) {
 			const types = component.types;
 
 			if (types.includes('street_number')) {
-				streetNumber = component.long_name;
+				streetNumber = component.longText;
 			}
 			if (types.includes('premise')) {
-				premise = component.long_name;
+				premise = component.longText;
 			}
 			if (types.includes('route')) {
-				route = component.long_name;
+				route = component.longText;
 			}
 			if (types.includes('locality') || types.includes('sublocality') || types.includes('administrative_area_level_1')) {
-				city = component.long_name;
+				if (city && city !== component.longText) {
+					city = `${city}, ${component.longText}`;
+				} else {
+					city = component.longText;
+				}
 			}
 			if (types.includes('postal_code')) {
-				postalCode = component.long_name;
+				postalCode = component.longText;
 			}
 		});
 

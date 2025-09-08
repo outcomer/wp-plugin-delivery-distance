@@ -29,6 +29,7 @@ define('ODD_GOOGLE_API_KEY_SERVER', 'AIzaSyAORIoCDvv68t94l3hqhUfv91BoEBd8RvI'); 
 define('ODD_STORE_LAT', 50.0707499);
 define('ODD_STORE_LNG', 14.4583567);
 define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
+define('ODD_DEFAULT_SHIPPING_INSTANCE_IDS', [1]);
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
 
 // Distance range matchers for shipping class slugs
