@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Outcomer Delivery Distance\n"
-"POT-Creation-Date: 2025-09-08 14:52+0200\n"
-"PO-Revision-Date: 2025-09-08 14:53+0200\n"
+"POT-Creation-Date: 2025-09-18 22:33+0200\n"
+"PO-Revision-Date: 2025-09-18 22:34+0200\n"
 "Last-Translator: Auto Generated\n"
 "Language-Team: Czech\n"
 "Language: cs_CZ\n"
@@ -23,31 +23,36 @@ msgstr "Pro výpočet doručení zadejte platnou adresu."
 msgid "Unable to validate the provided address. Please check and try again."
 msgstr "Nelze ověřit zadanou adresu. Zkontrolujte ji a zkuste to znovu."
 
-#: CheckoutHandler.php:124
-#, php-format
-msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
-msgstr "Doručení na tuto adresu není k dispozici. Vzdálenost: %.2fkm (max 6km)"
-
 #: CheckoutHandler.php:204
 msgid "Powered by"
 msgstr "Používá"
 
-#: shipping/ShippingCalculator.php:133 shipping/ShippingCalculator.php:178
+#: CheckoutHandler.php:221
+#, php-format
+msgid "Delivery is not available for this address. Distance: %.2fkm (max 6km)"
+msgstr "Doručení na tuto adresu není k dispozici. Vzdálenost: %.2fkm (max 6km)"
+
+#: CheckoutHandler.php:226
+msgid "Delivery is not available for this address"
+msgstr "Doručení na tuto adresu není k dispozici"
+
+#: shipping/ShippingCalculator.php:182 shipping/ShippingCalculator.php:192
+#: shipping/ShippingCalculator.php:215 shipping/ShippingCalculator.php:225
 msgid "zone"
 msgstr "zóna"
 
-#: shipping/ShippingCalculator.php:135 shipping/ShippingCalculator.php:180
+#: shipping/ShippingCalculator.php:184 shipping/ShippingCalculator.php:217
 msgid "distance"
 msgstr "vzdálenost"
 
-#: shipping/ShippingCalculator.php:162
+#: shipping/ShippingCalculator.php:200
 msgid "No address provided"
 msgstr "Nebyla poskytnuta žádná adresa"
 
-#: shipping/ShippingCalculator.php:170
+#: shipping/ShippingCalculator.php:207
 msgid "Address validation failed"
 msgstr "Ověření adresy se nezdařilo"
 
-#: shipping/ShippingCalculator.php:179
+#: shipping/ShippingCalculator.php:216 shipping/ShippingCalculator.php:226
 msgid "unavailable"
 msgstr "nedostupné"

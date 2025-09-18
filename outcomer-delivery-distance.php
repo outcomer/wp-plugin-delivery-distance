@@ -31,6 +31,7 @@ define('ODD_STORE_LNG', 14.4583567);
 define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
 define('ODD_DEFAULT_SHIPPING_INSTANCE_IDS', [1]);
 define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
+define('ODD_DEBUG', true);
 
 // Distance range matchers for shipping class slugs
 define('ODD_DISTANCE_MATCHERS', [

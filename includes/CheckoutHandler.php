@@ -121,7 +121,7 @@ class CheckoutHandler
 		if (!$this->distanceCalculator->isWithinDeliveryRange($distance)) {
 			$errors->add(
 				'delivery_unavailable',
-				sprintf(__('Delivery is not available for this address. Distance: %.2fkm (max 6km)', 'outcomer-delivery-distance'), $distance)
+				$this->getDeliveryUnavailableMessage($distance)
 			);
 
 			return;
@@ -211,6 +211,20 @@ class CheckoutHandler
 		<?php
 	}
 
+	/**
+	 * Get delivery unavailable message based on debug mode
+	 */
+	private function getDeliveryUnavailableMessage(float $distance): string
+	{
+		if (defined('ODD_DEBUG') && ODD_DEBUG) {
+			return sprintf(
+				__('Delivery is not available for this address. Distance: %.2fkm (max 6km)', 'outcomer-delivery-distance'),
+				$distance
+			);
+		}
+
+		return __('Delivery is not available for this address', 'outcomer-delivery-distance');
+	}
 
 	/**
 	 * Build address string from checkout data

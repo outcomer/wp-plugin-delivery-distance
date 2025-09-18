@@ -112,8 +112,6 @@ class ShippingCalculator
 	 */
 	private function updateRateWithDistance(WC_Shipping_Rate $rate, float $distance): WC_Shipping_Rate
 	{
-		$originalLabel = $rate->get_label();
-
 		// Get shipping class based on distance
 		$shippingClassId = $this->distanceCalculator->getShippingClassByDistance($distance);
 
@@ -127,12 +125,10 @@ class ShippingCalculator
 		// Update rate label to include distance and zone info
 		$zone = $this->distanceCalculator->getDeliveryZone($distance);
 
-		$newLabel = sprintf(
-			'%s (%s: %s, %s: %.1fkm)',
-			$originalLabel,
-			__('zone', 'outcomer-delivery-distance'),
+		$newLabel = $this->formatShippingLabel(
+			$rate->get_label(),
+			'available',
 			$zone,
-			__('distance', 'outcomer-delivery-distance'),
 			$distance
 		);
 		$rate->set_label($newLabel);
@@ -152,40 +148,12 @@ class ShippingCalculator
 	 */
 	private function markRateAsUnavailable(WC_Shipping_Rate $rate, string $reason, ?float $distance = null): void
 	{
-		$originalLabel = $rate->get_label();
-
-		switch ($reason) {
-			case 'no_address':
-				$newLabel = sprintf(
-					'%s (%s)',
-					$originalLabel,
-					__('No address provided', 'outcomer-delivery-distance')
-				);
-				break;
-
-			case 'geocoding_failed':
-				$newLabel = sprintf(
-					'%s (%s)',
-					$originalLabel,
-					__('Address validation failed', 'outcomer-delivery-distance')
-				);
-				break;
-
-			case 'distance_too_far':
-				$newLabel = sprintf(
-					'%s (%s: %s, %s: %.1fkm)',
-					$originalLabel,
-					__('zone', 'outcomer-delivery-distance'),
-					__('unavailable', 'outcomer-delivery-distance'),
-					__('distance', 'outcomer-delivery-distance'),
-					$distance ?? 0
-				);
-				break;
-
-			default:
-				$newLabel = $originalLabel;
-				break;
-		}
+		$newLabel = $this->formatShippingLabel(
+			$rate->get_label(),
+			$reason,
+			null,
+			$distance
+		);
 
 		// Don't wrap here - will be wrapped via filter
 		$rate->set_label($newLabel);
@@ -195,6 +163,71 @@ class ShippingCalculator
 
 		if (!is_null($distance)) {
 			$rate->add_meta_data('_outcomer_distance', $distance);
+		}
+	}
+
+	/**
+	 * Format shipping label based on status and context
+	 */
+	private function formatShippingLabel(string $originalLabel, string $status, ?string $zone = null, ?float $distance = null): string
+	{
+		$showDistance = defined('ODD_DEBUG') && ODD_DEBUG;
+
+		switch ($status) {
+			case 'available':
+				if ($showDistance && !is_null($distance)) {
+					return sprintf(
+						'%s (%s: %s, %s: %.1fkm)',
+						$originalLabel,
+						__('zone', 'outcomer-delivery-distance'),
+						$zone,
+						__('distance', 'outcomer-delivery-distance'),
+						$distance
+					);
+				}
+
+				return sprintf(
+					'%s (%s: %s)',
+					$originalLabel,
+					__('zone', 'outcomer-delivery-distance'),
+					$zone
+				);
+
+			case 'no_address':
+				return sprintf(
+					'%s (%s)',
+					$originalLabel,
+					__('No address provided', 'outcomer-delivery-distance')
+				);
+
+			case 'geocoding_failed':
+				return sprintf(
+					'%s (%s)',
+					$originalLabel,
+					__('Address validation failed', 'outcomer-delivery-distance')
+				);
+
+			case 'distance_too_far':
+				if ($showDistance && !is_null($distance)) {
+					return sprintf(
+						'%s (%s: %s, %s: %.1fkm)',
+						$originalLabel,
+						__('zone', 'outcomer-delivery-distance'),
+						__('unavailable', 'outcomer-delivery-distance'),
+						__('distance', 'outcomer-delivery-distance'),
+						$distance
+					);
+				}
+
+				return sprintf(
+					'%s (%s: %s)',
+					$originalLabel,
+					__('zone', 'outcomer-delivery-distance'),
+					__('unavailable', 'outcomer-delivery-distance')
+				);
+
+			default:
+				return $originalLabel;
 		}
 	}
 
