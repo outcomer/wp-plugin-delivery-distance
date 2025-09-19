@@ -109,7 +109,7 @@ jQuery(document).ready(function ($) {
 
 		// Hide suggestions when input loses focus (with delay for clicks)
 		$(input).on('blur', function () {
-			setTimeout(() => hideSuggestions(), 150);
+			setTimeout(() => hideSuggestions(), 200);
 		});
 
 		// Show suggestions when input gets focus and has value
@@ -216,8 +216,21 @@ jQuery(document).ready(function ($) {
 				secondaryText.style.display = 'none';
 			}
 
-			// Add click handler
-			itemElement.addEventListener('click', () => selectSuggestion(i));
+			// Prevent blur when pressing mouse button down
+			itemElement.addEventListener('mousedown', function(e) {
+				e.preventDefault(); // This prevents the input from losing focus
+			});
+
+			// Handle selection when mouse button is released
+			itemElement.addEventListener('mouseup', function(e) {
+				selectSuggestion(i);
+			});
+
+			// Keep click as fallback
+			itemElement.addEventListener('click', function(e) {
+				e.preventDefault();
+				selectSuggestion(i);
+			});
 
 			// Append to container
 			container.appendChild(itemElement);
