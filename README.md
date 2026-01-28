@@ -96,26 +96,24 @@ Delivery costs are now managed dynamically through WooCommerce Shipping Classes 
 
 ```
 outcomer-delivery-distance/
-├── outcomer-delivery-distance.php  # Main file
-├── includes/                       # PHP classes
-│   ├── autoload.php               # PSR-4 autoloader
-│   ├── Plugin.php                 # Main plugin class
-│   ├── DistanceCalculator.php     # Distance calculations
-│   ├── Geocoder.php              # Google API integration
-│   ├── CheckoutHandler.php       # Checkout integration
-│   └── shipping/                  # Shipping logic (refactored)
+├── outcomer-delivery-distance.php      # Main file
+├── includes/                           # PHP classes
+│   ├── autoload.php                    # PSR-4 autoloader
+│   ├── Plugin.php                      # Main plugin class
+│   ├── DistanceCalculator.php          # Distance calculations
+│   ├── Geocoder.php                    # Google API integration
+│   ├── CheckoutHandler.php             # Checkout integration
+│   └── shipping/                       # Shipping logic (refactored)
 │       ├── ShippingCalculator.php      # Main shipping coordinator
 │       ├── ShippingValidator.php       # Address validation
 │       ├── ShippingMethodSelector.php  # Method selection logic
 │       └── FragmentUpdater.php         # Checkout UI updates
 ├── assets/
 │   ├── js/
-│   │   └── checkout-autocomplete.js # Frontend JavaScript
+│   │   └── checkout-autocomplete.js    # Frontend JavaScript
 │   └── css/
-│       └── checkout-autocomplete.css # Styling
-├── PRD.md                         # Technical specification
-├── IMPLEMENTATION_PLAN.md         # Development plan
-└── README.md                      # This documentation
+│       └── checkout-autocomplete.css   # Styling
+└── README.md                           # This documentation
 ```
 
 ## Debugging
