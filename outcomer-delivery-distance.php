@@ -24,14 +24,15 @@ define('ODD_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ODD_VERSION', '1.0.0');
 
 // Configuration constants
-define('ODD_GOOGLE_API_KEY_BROWSER', 'AIzaSyA-gpgh1bFH3RM0277dI38fNDWDkvY8F7M'); // For JavaScript (with referer restrictions)
-define('ODD_GOOGLE_API_KEY_SERVER', 'AIzaSyAORIoCDvv68t94l3hqhUfv91BoEBd8RvI'); // For server-side Geocoding (with IP restrictions)
-define('ODD_STORE_LAT', 50.0707499);
-define('ODD_STORE_LNG', 14.4583567);
-define('ODD_COUNTRY_RESTRICT', ['CZ' => 'Czech Republic']);
-define('ODD_DEFAULT_SHIPPING_INSTANCE_IDS', [1]);
-define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', [2]);
-define('ODD_DEBUG', true);
+// TODO: Create admin settings page and store these values in database instead of hardcoding
+defined('ODD_GOOGLE_API_KEY_BROWSER') || define('ODD_GOOGLE_API_KEY_BROWSER', 'YOUR_GOOGLE_API_KEY_BROWSER'); // For JavaScript (with referer restrictions)
+defined('ODD_GOOGLE_API_KEY_SERVER') || define('ODD_GOOGLE_API_KEY_SERVER', 'YOUR_GOOGLE_API_KEY_SERVER'); // For server-side Geocoding (with IP restrictions)
+defined('ODD_STORE_LAT') || define('ODD_STORE_LAT', 0.0);
+defined('ODD_STORE_LNG') || define('ODD_STORE_LNG', 0.0);
+defined('ODD_COUNTRY_RESTRICT') || define('ODD_COUNTRY_RESTRICT', ['US' => 'United States']);
+defined('ODD_DEFAULT_SHIPPING_INSTANCE_IDS') || define('ODD_DEFAULT_SHIPPING_INSTANCE_IDS', []);
+defined('ODD_ENABLED_SHIPPING_INSTANCE_IDS') || define('ODD_ENABLED_SHIPPING_INSTANCE_IDS', []);
+defined('ODD_DEBUG') || define('ODD_DEBUG', false);
 
 // Distance range matchers for shipping class slugs
 define('ODD_DISTANCE_MATCHERS', [
@@ -42,19 +43,27 @@ define('ODD_DISTANCE_MATCHERS', [
 	],
 ]);
 
-/**
- * Load plugin textdomain for translations
- */
-function loadOutcomerDeliveryTextdomain(): void
-{
-	load_plugin_textdomain(
-		'outcomer-delivery-distance',
-		false,
-		dirname(plugin_basename(__FILE__)).'/languages'
+// Show admin notice about hardcoded configuration
+add_action('admin_init', function () {
+	$needsConfig = (
+		ODD_GOOGLE_API_KEY_BROWSER === 'YOUR_GOOGLE_API_KEY_BROWSER' ||
+		ODD_GOOGLE_API_KEY_SERVER === 'YOUR_GOOGLE_API_KEY_SERVER' ||
+		ODD_STORE_LAT === 0.0 ||
+		ODD_STORE_LNG === 0.0 ||
+		empty(ODD_DEFAULT_SHIPPING_INSTANCE_IDS) ||
+		empty(ODD_ENABLED_SHIPPING_INSTANCE_IDS)
 	);
-}
 
-add_action('plugins_loaded', 'loadOutcomerDeliveryTextdomain');
+	if ($needsConfig) {
+		add_action('admin_notices', function () {
+			?>
+			<div class="notice notice-warning is-dismissible">
+				<p><?php _e('Outcomer Delivery Distance: Plugin configuration is incomplete. Please define the required constants in wp-config.php or directly in the plugin file. TODO: Create settings page for this.', 'outcomer-delivery-distance'); ?></p>
+			</div>
+			<?php
+		});
+	}
+});
 
 /**
  * Check if WooCommerce is active
@@ -78,12 +87,12 @@ function checkWooCommerceRequirement(): bool
 
 // Initialize plugin
 add_action('plugins_loaded', function () {
+	// Load text domain
+	load_plugin_textdomain('outcomer-delivery-distance', false, dirname(plugin_basename(__FILE__)).'/languages');
+
 	if (!checkWooCommerceRequirement()) {
 		return;
 	}
-
-	// Load text domain
-	load_plugin_textdomain('outcomer-delivery-distance', false, dirname(plugin_basename(__FILE__)).'/languages');
 
 	// Load autoloader and main plugin class
 	require_once ODD_PLUGIN_DIR.'includes/autoload.php';
